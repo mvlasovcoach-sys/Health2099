@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Diary Plus</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+  </head>
+  <body>
+    <div data-include="nav"></div>
+    <main>
+      <div class="container">
+        <header>
+          <h1>Diary</h1>
+          <p>Track hydration, sleep, movement, and mood with unified storage.</p>
+        </header>
+
+        <section class="card-grid" id="summary-cards"></section>
+
+        <section>
+          <form id="event-form">
+            <h2>Add event</h2>
+            <div class="form-row">
+              <label>
+                Type
+                <select name="type" required>
+                  <option value="water">Water (ml)</option>
+                  <option value="caffeine">Caffeine (mg)</option>
+                  <option value="steps">Steps</option>
+                  <option value="sleep">Sleep (min)</option>
+                  <option value="stress">Stress (1-10)</option>
+                  <option value="energy">Energy (1-10)</option>
+                  <option value="srv">SRV (1-10)</option>
+                  <option value="med">Medication</option>
+                </select>
+              </label>
+              <label>
+                Value
+                <input type="number" name="value" step="0.1" placeholder="e.g. 250" />
+              </label>
+              <label>
+                Note
+                <input type="text" name="note" placeholder="Optional notes" />
+              </label>
+            </div>
+            <div class="form-row">
+              <button type="submit">Add event</button>
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <button type="button" class="secondary" id="export-btn">Export JSON</button>
+                <button type="button" class="secondary" id="import-btn">Import JSON</button>
+                <input type="file" id="import-file" accept="application/json" style="display:none" />
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <section class="table-wrapper">
+          <table id="events-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Note</th>
+                <th>Created</th>
+                <th>Updated</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="./shared/storage.js"></script>
+    <script src="./shared/nav-loader.js"></script>
+    <script>
+      (function () {
+        const form = document.getElementById('event-form');
+        const tableBody = document.querySelector('#events-table tbody');
+        const cardsContainer = document.getElementById('summary-cards');
+        const toast = document.getElementById('toast');
+        const fileInput = document.getElementById('import-file');
+        const importBtn = document.getElementById('import-btn');
+        const exportBtn = document.getElementById('export-btn');
+
+        let events = [];
+
+        function createId() {
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+          }
+          return 'evt_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        }
+
+        function showToast(message) {
+          toast.textContent = message;
+          toast.classList.add('visible');
+          setTimeout(() => toast.classList.remove('visible'), 2200);
+        }
+
+        function renderCards() {
+          const now = new Date();
+          const day = StorageAPI.aggregates('day', now);
+          const week = StorageAPI.aggregates('week', now);
+          const month = StorageAPI.aggregates('month', now);
+          cardsContainer.innerHTML = [
+            cardMarkup('Water today', `${day.water_ml} ml`),
+            cardMarkup('Steps today', `${day.steps}`),
+            cardMarkup('Sleep this week', `${Math.round(week.sleep_min / 60)} h`),
+            cardMarkup('Meds this month', `${month.meds_count}`),
+            cardMarkup('Avg stress today', `${day.stress_avg}`),
+          ].join('');
+        }
+
+        function cardMarkup(title, value) {
+          return `<article class="card"><h3>${title}</h3><strong>${value}</strong></article>`;
+        }
+
+        function renderTable() {
+          const visibleEvents = events.filter((event) => !event.deleted_at);
+          if (!visibleEvents.length) {
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">No events yet</td></tr>`;
+            return;
+          }
+          tableBody.innerHTML = '';
+          visibleEvents.forEach((event) => {
+            const row = document.createElement('tr');
+            row.dataset.id = event.id;
+            row.innerHTML = `
+              <td>${event.type}</td>
+              <td><input type="number" step="0.1" value="${event.value_number ?? ''}" aria-label="${event.type} value" /></td>
+              <td><input type="text" value="${event.note ? escapeHtml(event.note) : ''}" aria-label="${event.type} note" /></td>
+              <td>${formatDate(event.created_at)}</td>
+              <td>${formatDate(event.updated_at)}</td>
+              <td style="text-align:right;"><button type="button" class="danger" data-action="delete">Delete</button></td>
+            `;
+            const [valueInput, noteInput] = row.querySelectorAll('input');
+            valueInput.addEventListener('change', () => updateValue(event.id, valueInput.value));
+            noteInput.addEventListener('change', () => updateNote(event.id, noteInput.value));
+            row.querySelector('[data-action="delete"]').addEventListener('click', () => softDelete(event.id));
+            tableBody.appendChild(row);
+          });
+        }
+
+        function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        function updateValue(id, value) {
+          const target = events.find((item) => item.id === id);
+          if (!target) return;
+          const numeric = value === '' ? null : Number(value);
+          target.value_number = Number.isFinite(numeric) ? numeric : null;
+          target.updated_at = new Date().toISOString();
+          events = StorageAPI.saveEvents(events);
+          renderCards();
+          renderTable();
+          showToast('Event updated');
+        }
+
+        function updateNote(id, note) {
+          const target = events.find((item) => item.id === id);
+          if (!target) return;
+          target.note = note;
+          target.updated_at = new Date().toISOString();
+          events = StorageAPI.saveEvents(events);
+          renderTable();
+          showToast('Note updated');
+        }
+
+        function softDelete(id) {
+          const target = events.find((item) => item.id === id);
+          if (!target) return;
+          target.deleted_at = new Date().toISOString();
+          target.updated_at = target.deleted_at;
+          events = StorageAPI.saveEvents(events);
+          renderCards();
+          renderTable();
+          showToast('Event deleted');
+        }
+
+        function formatDate(value) {
+          const parsed = new Date(value);
+          if (Number.isNaN(parsed.getTime())) return '';
+          return parsed.toLocaleString();
+        }
+
+        function refresh() {
+          events = StorageAPI.loadEvents();
+          renderCards();
+          renderTable();
+        }
+
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const formData = new FormData(form);
+          const type = formData.get('type');
+          const value = formData.get('value');
+          const note = formData.get('note');
+          const now = new Date().toISOString();
+          const numeric = value === '' ? null : Number(value);
+          const newEvent = {
+            id: createId(),
+            type,
+            note: note ? String(note) : '',
+            value_number: Number.isFinite(numeric) ? numeric : null,
+            created_at: now,
+            updated_at: now,
+          };
+          events.unshift(newEvent);
+          StorageAPI.saveEvents(events);
+          form.reset();
+          refresh();
+          showToast('Event added');
+        });
+
+        importBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleImportFile);
+        exportBtn.addEventListener('click', handleExport);
+
+        function handleExport() {
+          const data = StorageAPI.exportJson();
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `health-diary-${new Date().toISOString().slice(0, 10)}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          showToast('Export created');
+        }
+
+        async function handleImportFile(event) {
+          const file = event.target.files && event.target.files[0];
+          if (!file) return;
+          try {
+            const text = await file.text();
+            const payload = JSON.parse(text);
+            const { added, updated } = StorageAPI.importJson(payload);
+            events = StorageAPI.loadEvents();
+            renderCards();
+            renderTable();
+            showToast(`Импорт: +${added}, обновлено ${updated}`);
+          } catch (err) {
+            console.error('Import failed', err);
+            showToast('Import failed');
+          } finally {
+            event.target.value = '';
+          }
+        }
+
+        window.addEventListener('health:changed', () => {
+          events = StorageAPI.loadEvents();
+          renderCards();
+          renderTable();
+        });
+
+        refresh();
+      })();
+    </script>
+  </body>
+</html>
