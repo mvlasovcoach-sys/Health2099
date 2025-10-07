@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Summary</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+  </head>
+  <body>
+    <div data-include="nav"></div>
+    <main>
+      <div class="container">
+        <header>
+          <h1>Summary</h1>
+          <p>Overview of your recent health metrics with unified storage.</p>
+        </header>
+
+        <section class="card-grid" id="summary-cards"></section>
+
+        <section class="card-grid" id="averages"></section>
+
+        <section class="card">
+          <h2>Quick actions</h2>
+          <p>Log common events with one tap. Use the diary for detailed edits.</p>
+          <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+            <button type="button" data-action="water" data-value="250">+250 ml water</button>
+            <button type="button" data-action="water" data-value="500">+500 ml water</button>
+            <button type="button" class="secondary" data-action="steps" data-value="1000">+1k steps</button>
+            <button type="button" class="secondary" data-action="sleep" data-value="480">+8h sleep</button>
+          </div>
+        </section>
+
+        <section class="table-wrapper">
+          <table id="recent-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Note</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="./shared/storage.js"></script>
+    <script src="./shared/nav-loader.js"></script>
+    <script>
+      (function () {
+        const summaryCards = document.getElementById('summary-cards');
+        const averagesCards = document.getElementById('averages');
+        const tableBody = document.querySelector('#recent-table tbody');
+        const toast = document.getElementById('toast');
+        const quickButtons = document.querySelectorAll('[data-action]');
+
+        function showToast(message) {
+          toast.textContent = message;
+          toast.classList.add('visible');
+          setTimeout(() => toast.classList.remove('visible'), 2200);
+        }
+
+        function renderSummary() {
+          const now = new Date();
+          const day = StorageAPI.aggregates('day', now);
+          const week = StorageAPI.aggregates('week', now);
+          const month = StorageAPI.aggregates('month', now);
+          summaryCards.innerHTML = [
+            card('Water today', `${day.water_ml} ml`),
+            card('Steps today', `${day.steps}`),
+            card('Sleep this week', `${Math.round(week.sleep_min / 60)} h`),
+            card('Meds this month', `${month.meds_count}`),
+          ].join('');
+          averagesCards.innerHTML = [
+            card('Stress avg (day)', `${day.stress_avg}`),
+            card('Energy avg (day)', `${day.energy_avg}`),
+            card('SRV avg (day)', `${day.srv_avg}`),
+            card('Caffeine (week)', `${week.caffeine_mg} mg`),
+          ].join('');
+        }
+
+        function card(title, value) {
+          return `<article class="card"><h3>${title}</h3><strong>${value}</strong></article>`;
+        }
+
+        function renderRecent() {
+          const events = StorageAPI.loadEvents().filter((event) => !event.deleted_at).slice(0, 8);
+          if (!events.length) {
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:#64748b;">No events logged yet</td></tr>`;
+            return;
+          }
+          tableBody.innerHTML = '';
+          events.forEach((event) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${event.type}</td>
+              <td>${event.value_number ?? ''}</td>
+              <td>${escapeHtml(event.note || '')}</td>
+              <td>${formatDate(event.created_at)}</td>
+            `;
+            tableBody.appendChild(row);
+          });
+        }
+
+        function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        function formatDate(value) {
+          const parsed = new Date(value);
+          if (Number.isNaN(parsed.getTime())) return '';
+          return parsed.toLocaleString();
+        }
+
+        quickButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const action = button.dataset.action;
+            const value = Number(button.dataset.value || 0);
+            addQuickEvent(action, value);
+          });
+        });
+
+        function addQuickEvent(type, value) {
+          const now = new Date().toISOString();
+          const event = {
+            id: createId(),
+            type,
+            value_number: value || null,
+            note: '',
+            created_at: now,
+            updated_at: now,
+          };
+          const events = StorageAPI.loadEvents();
+          events.unshift(event);
+          StorageAPI.saveEvents(events);
+          renderSummary();
+          renderRecent();
+          showToast(`${type} logged`);
+        }
+
+        function createId() {
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+          }
+          return 'evt_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        }
+
+        function refresh() {
+          renderSummary();
+          renderRecent();
+        }
+
+        window.addEventListener('health:changed', refresh);
+
+        refresh();
+      })();
+    </script>
+  </body>
+</html>
