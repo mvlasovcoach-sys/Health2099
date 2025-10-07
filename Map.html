@@ -6,7 +6,13 @@
     <title>Map snapshots</title>
     <meta name="theme-color" content="#2563eb" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-o9N1j7kGStpBlXnKzHf0C6YxM0tZQYVI0eCFj0zPmL0=" crossorigin="" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-o9N1j7kGStpBlXnKzHf0C6YxM0tZQYVI0eCFj0zPmL0="
+      crossorigin="anonymous"
+      onerror="this.onerror=null;this.href='./shared/vendor/leaflet/leaflet.css';"
+    />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <link rel="stylesheet" href="./shared/styles.css" />
@@ -17,6 +23,13 @@
       .app-shell {
         background-image: none;
         background: radial-gradient(circle at top, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.9));
+      }
+      .map {
+        width: 100%;
+        min-height: 420px;
+        height: 60vh;
+        border-radius: 16px;
+        overflow: hidden;
       }
     </style>
   </head>
@@ -74,7 +87,7 @@
           </aside>
 
           <section class="map-panel">
-            <div id="map"></div>
+            <div id="map" class="map"></div>
           </section>
         </div>
       </div>
@@ -84,7 +97,17 @@
 
     <script src="./shared/storage.js"></script>
     <script src="./shared/nav-loader.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-o9N1j7kGStpBlXnKzHf0C6YxM0tZQYVI0eCFj0zPmL0=" crossorigin=""></script>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-o9N1j7kGStpBlXnKzHf0C6YxM0tZQYVI0eCFj0zPmL0="
+      crossorigin="anonymous"
+      onerror="this.onerror=null;this.remove();var s=document.createElement('script');s.src='./shared/vendor/leaflet/leaflet.js';document.head.appendChild(s);"
+    ></script>
+    <script>
+      if (typeof window.L === 'undefined') {
+        document.write('<script src="./shared/vendor/leaflet/leaflet.js"><\/script>');
+      }
+    </script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script>
       (function () {
@@ -129,6 +152,9 @@
 
         renderCalendarLabels();
         refresh();
+        requestAnimationFrame(() => {
+          map.invalidateSize();
+        });
 
         function renderCalendarLabels() {
           if (!calendarLabels) return;
@@ -195,6 +221,7 @@
           renderList(visibleLocations);
           renderCalendar(allLocations);
           updateRangeLabel(anchor, visibleLocations.length);
+          map.invalidateSize();
         }
 
         function updateModeButtons() {
@@ -240,7 +267,8 @@
           if (markerLayer) {
             markerLayer.removeFrom(map);
           }
-          markerLayer = locations.length > 100 ? L.markerClusterGroup({ chunkedLoading: true }) : L.layerGroup();
+          const supportsClusters = typeof L.markerClusterGroup === 'function';
+          markerLayer = locations.length > 100 && supportsClusters ? L.markerClusterGroup({ chunkedLoading: true }) : L.layerGroup();
           markerIndex = new Map();
           locations.forEach((location) => {
             const marker = L.marker([location.lat, location.lng]);
