@@ -15,6 +15,7 @@
 })(function () {
   const LS_EVENTS = 'health_events_v1';
   const LS_SETTINGS = 'health_settings_v1';
+  const LS_LOCATIONS = 'health_locations_v1';
   const SCHEMA_VERSION = 1;
 
   function nowISO() {
@@ -56,7 +57,7 @@
       return parsed ? parsed.toISOString() : nowISO();
     };
 
-    const id = ensureString(source.id, undefined) || generateId();
+    const id = ensureString(source.id, undefined) || generateId('evt');
     const type = ensureString(source.type, 'generic');
     const note = ensureString(source.note, '');
     const valueNumber = ensureNumber(source.value_number);
@@ -81,11 +82,57 @@
     return normalized;
   }
 
-  function generateId() {
+  function sanitizeLocation(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const source = { ...raw };
+    const ensureNumber = (value) => {
+      if (value == null || value === '') return null;
+      const num = Number(value);
+      return Number.isFinite(num) ? num : null;
+    };
+    const ensureString = (value, fallback = '') => (typeof value === 'string' ? value : fallback);
+    const ensureDateIso = (value, fallback) => {
+      const parsed = parseDate(value) || (fallback ? parseDate(fallback) : null);
+      return parsed ? parsed.toISOString() : nowISO();
+    };
+
+    const id = ensureString(source.id, undefined) || generateId('loc');
+    const lat = ensureNumber(source.lat);
+    const lng = ensureNumber(source.lng);
+    if (lat == null || lng == null) {
+      return null;
+    }
+    const accuracy = ensureNumber(source.accuracy_m);
+    const createdAt = ensureDateIso(source.created_at, source.updated_at);
+    const updatedAt = ensureDateIso(source.updated_at, createdAt);
+    const note = ensureString(source.note, '');
+    const locationSource = ensureString(source.source, 'device');
+
+    const normalized = {
+      ...source,
+      id,
+      lat,
+      lng,
+      note,
+      source: locationSource === 'manual' ? 'manual' : 'device',
+      created_at: createdAt,
+      updated_at: updatedAt,
+    };
+
+    if (accuracy != null) {
+      normalized.accuracy_m = accuracy;
+    } else {
+      delete normalized.accuracy_m;
+    }
+
+    return normalized;
+  }
+
+  function generateId(prefix = 'evt') {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID();
     }
-    return `evt_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+    return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
   }
 
   function readArray(key) {
@@ -153,6 +200,83 @@
     return source;
   }
 
+  function loadLocations() {
+    const items = readArray(LS_LOCATIONS).map(sanitizeLocation).filter(Boolean);
+    return items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  function saveLocations(locations) {
+    const normalized = (Array.isArray(locations) ? locations : []).map(sanitizeLocation).filter(Boolean);
+    const sorted = normalized.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    storage().setItem(LS_LOCATIONS, JSON.stringify(sorted));
+    dispatchChange('locations');
+    return sorted;
+  }
+
+  function addLocation(payload) {
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('Payload is required for addLocation');
+    }
+    const now = nowISO();
+    const entry = sanitizeLocation({
+      ...payload,
+      id: generateId('loc'),
+      source: payload.source || 'device',
+      created_at: now,
+      updated_at: now,
+    });
+    if (!entry) {
+      throw new Error('Invalid location payload');
+    }
+    const locations = loadLocations();
+    locations.unshift(entry);
+    saveLocations(locations);
+    return entry;
+  }
+
+  function updateLocation(id, patch) {
+    if (!id) return;
+    const list = loadLocations();
+    const index = list.findIndex((item) => item.id === id);
+    if (index === -1) return;
+    const current = list[index];
+    const next = sanitizeLocation({
+      ...current,
+      ...patch,
+      id: current.id,
+      created_at: current.created_at,
+      updated_at: nowISO(),
+    });
+    if (!next) return;
+    list[index] = next;
+    saveLocations(list);
+  }
+
+  function deleteLocation(id) {
+    if (!id) return;
+    const next = loadLocations().filter((item) => item.id !== id);
+    saveLocations(next);
+  }
+
+  function locationsByDate(date) {
+    const target = date instanceof Date ? date : new Date(date);
+    const start = startOfDay(target);
+    const end = endOfDay(target);
+    return locationsInRange(start, end);
+  }
+
+  function locationsInRange(start, end) {
+    const startDate = start ? new Date(start) : null;
+    const endDate = end ? new Date(end) : null;
+    return loadLocations().filter((location) => {
+      const created = parseDate(location.created_at);
+      if (!created) return false;
+      if (startDate && created < startDate) return false;
+      if (endDate && created > endDate) return false;
+      return true;
+    });
+  }
+
   function upsertEvents(incoming) {
     const list = loadEvents();
     const map = new Map(list.map((item) => [item.id, item]));
@@ -179,24 +303,60 @@
     return { added, updated, total: merged.length };
   }
 
+  function upsertLocations(incoming) {
+    const list = loadLocations();
+    const map = new Map(list.map((item) => [item.id, item]));
+    let added = 0;
+    let updated = 0;
+    (incoming || []).forEach((raw) => {
+      const next = sanitizeLocation(raw);
+      if (!next) return;
+      const existing = map.get(next.id);
+      if (!existing) {
+        map.set(next.id, next);
+        added += 1;
+        return;
+      }
+      const incomingDate = parseDate(next.updated_at);
+      const existingDate = parseDate(existing.updated_at);
+      if (!existingDate || (incomingDate && incomingDate > existingDate)) {
+        map.set(next.id, { ...existing, ...next, updated_at: incomingDate ? incomingDate.toISOString() : nowISO() });
+        updated += 1;
+      }
+    });
+    const merged = Array.from(map.values());
+    saveLocations(merged);
+    return { added, updated, total: merged.length };
+  }
+
   function exportJson() {
     return {
       version: SCHEMA_VERSION,
       events: loadEvents(),
       settings: loadSettings(),
+      locations: loadLocations(),
     };
   }
 
   function importJson(payload) {
-    const result = { added: 0, updated: 0 };
+    const result = {
+      added: 0,
+      updated: 0,
+      events: { added: 0, updated: 0, total: loadEvents().length },
+      locations: { added: 0, updated: 0, total: loadLocations().length },
+    };
     if (!payload || typeof payload !== 'object') {
       return result;
     }
     const events = Array.isArray(payload.events) ? payload.events : [];
     const settings = payload.settings && typeof payload.settings === 'object' ? payload.settings : null;
-    const { added, updated } = upsertEvents(events);
+    const incomingLocations = Array.isArray(payload.locations) ? payload.locations : [];
+    const { added, updated, total } = upsertEvents(events);
     result.added = added;
     result.updated = updated;
+    result.events = { added, updated, total };
+    const locationsMerge = upsertLocations(incomingLocations);
+    result.locations = locationsMerge;
     if (settings) {
       const current = loadSettings();
       saveSettings({ ...current, ...settings });
@@ -377,18 +537,33 @@
       if (event.key === LS_SETTINGS) {
         dispatchChange('settings');
       }
+      if (event.key === LS_LOCATIONS) {
+        dispatchChange('locations');
+      }
+      if (event.key == null) {
+        dispatchChange('storage');
+      }
     });
   }
 
   const api = {
     LS_EVENTS,
     LS_SETTINGS,
+    LS_LOCATIONS,
     SCHEMA_VERSION,
     loadEvents,
     saveEvents,
     loadSettings,
     saveSettings,
+    loadLocations,
+    saveLocations,
+    addLocation,
+    updateLocation,
+    deleteLocation,
+    locationsByDate,
+    locationsInRange,
     upsertEvents,
+    upsertLocations,
     exportJson,
     importJson,
     range,

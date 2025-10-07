@@ -1,0 +1,21 @@
+{
+  "name": "health2099",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Diary, summary, and map snapshots with offline support.",
+  "scripts": {
+    "start": "npx serve .",
+    "build": "echo 'Static build only'",
+    "cap:init": "npx cap init Health2099 com.health2099.app --web-dir . --npm-client npm",
+    "cap:copy": "npx cap copy",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^5.7.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.7.4",
+    "@capacitor/android": "^5.7.4"
+  }
+}

@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_BASE_NAME=${0##*/}
+APP_HOME=$(dirname "$DIR")
+if [ -z "$JAVA_HOME" ]; then
+  JAVA_CMD="java"
+else
+  JAVA_CMD="$JAVA_HOME/bin/java"
+fi
+WRAPPER_JAR="$DIR/gradle/wrapper/gradle-wrapper.jar"
+if [ ! -f "$WRAPPER_JAR" ]; then
+  echo "gradle-wrapper.jar not found. Run 'npx cap add android' or 'gradle wrapper' to regenerate." >&2
+  exit 1
+fi
+exec "$JAVA_CMD" -jar "$WRAPPER_JAR" "$@"

@@ -1,0 +1,9 @@
+{
+  "appId": "com.health2099.app",
+  "appName": "Health2099",
+  "bundledWebRuntime": false,
+  "webDir": ".",
+  "android": {
+    "allowMixedContent": true
+  }
+}

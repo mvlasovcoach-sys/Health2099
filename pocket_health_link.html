@@ -4,31 +4,43 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Health2099 Pocket Links</title>
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./shared/styles.css" />
-    <style>
-      main { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 80px); }
-      .link-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); width: 100%; max-width: 720px; }
-      .link-card { background: #fff; padding: 1.75rem; border-radius: 16px; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12); text-align: center; }
-      .link-card a { display: inline-block; margin-top: 1rem; }
-    </style>
   </head>
-  <body>
+  <body class="app-shell">
     <div data-include="nav"></div>
-    <main>
-      <div class="link-grid">
-        <article class="link-card">
-          <h1>Diary</h1>
-          <p>Log hydration, sleep, movement, and daily notes.</p>
-          <a href="./DiaryPlus.html" class="button">Open diary</a>
-        </article>
-        <article class="link-card">
-          <h1>Summary</h1>
-          <p>Check aggregated stats and quick actions.</p>
-          <a href="./Summary.html" class="button secondary">Open summary</a>
-        </article>
+    <main class="app-main">
+      <div class="container">
+        <div class="link-grid">
+          <article class="link-card">
+            <h1>Diary</h1>
+            <p>Log hydration, sleep, movement, and daily notes.</p>
+            <a href="./DiaryPlus.html" class="button">Open diary</a>
+          </article>
+          <article class="link-card">
+            <h1>Summary</h1>
+            <p>Check aggregated stats and quick actions.</p>
+            <a href="./Summary.html" class="button secondary">Open summary</a>
+          </article>
+          <article class="link-card">
+            <h1>Map</h1>
+            <p>Capture location snapshots and revisit your movement history.</p>
+            <a href="./Map.html" class="button">Open map</a>
+          </article>
+        </div>
       </div>
     </main>
     <script src="./shared/storage.js"></script>
     <script src="./shared/nav-loader.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js').catch((err) => {
+            console.warn('Service worker registration failed', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

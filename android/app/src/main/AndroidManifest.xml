@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application
+    android:allowBackup="true"
+    android:icon="@android:drawable/sym_def_app_icon"
+    android:label="Health2099"
+    android:supportsRtl="true"
+    android:usesCleartextTraffic="true"
+    android:networkSecurityConfig="@xml/network_security_config"
+    android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+    <activity
+      android:name="com.health2099.app.MainActivity"
+      android:exported="true"
+      android:label="Health2099"
+      android:launchMode="singleTask"
+      android:configChanges="keyboardHidden|keyboard|orientation|screenSize"
+      android:screenOrientation="portrait">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+    <meta-data android:name="com.google.android.geo.API_KEY" android:value="" />
+  </application>
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+</manifest>
