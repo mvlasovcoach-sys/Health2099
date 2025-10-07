@@ -38,29 +38,32 @@
               <div class="map-toolbar">
                 <button type="button" id="my-location">My location</button>
                 <button type="button" id="snapshot">Snapshot</button>
-                <button type="button" class="secondary" id="show-day">Show day</button>
-                <button type="button" class="secondary" id="show-week">Show week</button>
-                <button type="button" class="secondary" id="show-month">Show month</button>
-              </div>
-              <label>
-                <span>Select date</span>
-                <input type="date" id="date-input" />
-              </label>
-              <label>
-                <span>Search notes</span>
-                <input type="search" id="search-input" placeholder="Filter notes" />
-              </label>
-              <div class="map-toolbar">
+                <button type="button" id="date-button" class="secondary">Date ⌄</button>
+                <button type="button" class="secondary map-mode" id="show-day" data-mode="day" aria-pressed="true">Day</button>
+                <button type="button" class="secondary map-mode" id="show-week" data-mode="week" aria-pressed="false">Week</button>
+                <button type="button" class="secondary map-mode" id="show-month" data-mode="month" aria-pressed="false">Month</button>
+                <span class="map-toolbar__spacer" aria-hidden="true"></span>
                 <button type="button" class="secondary" id="export-map">Export JSON</button>
                 <button type="button" class="secondary" id="import-map">Import JSON</button>
-                <input type="file" id="import-file" accept="application/json" />
               </div>
+              <input type="date" id="date-input" class="visually-hidden" />
+              <input type="file" id="import-file" accept="application/json" class="visually-hidden" />
+              <p class="map-selected-range" id="range-label"></p>
             </section>
 
             <section class="map-card">
+              <div class="map-calendar" aria-label="Snapshot calendar">
+                <div class="map-calendar__header">
+                  <button type="button" class="ghost" id="calendar-prev" aria-label="Previous month">‹</button>
+                  <div class="map-calendar__month" id="calendar-month"></div>
+                  <button type="button" class="ghost" id="calendar-next" aria-label="Next month">›</button>
+                </div>
+                <div class="map-calendar__grid map-calendar__grid--labels" aria-hidden="true"></div>
+                <div class="map-calendar__grid" id="calendar-grid" role="grid" aria-labelledby="calendar-month"></div>
+              </div>
               <h2 style="margin:0; font-size:1.1rem; color:var(--color-heading);">History</h2>
               <div id="history-count" class="tag">0 snapshots</div>
-              <div id="history-list" class="map-list"></div>
+              <div id="history-list" class="map-list" aria-live="polite"></div>
               <div class="empty-state" id="history-empty" style="display:none;">
                 <p style="margin:0 0 0.75rem;">No snapshots yet for this range.</p>
                 <p style="margin:0; font-size:0.85rem;">Tip: enable location on HTTPS or use localhost for device snapshots. Otherwise, capture from the map center.</p>
@@ -86,22 +89,25 @@
         const toast = document.getElementById('toast');
         const myLocationBtn = document.getElementById('my-location');
         const snapshotBtn = document.getElementById('snapshot');
+        const dateButton = document.getElementById('date-button');
         const dateInput = document.getElementById('date-input');
-        const showDayBtn = document.getElementById('show-day');
-        const showWeekBtn = document.getElementById('show-week');
-        const showMonthBtn = document.getElementById('show-month');
-        const searchInput = document.getElementById('search-input');
+        const modeButtons = Array.from(document.querySelectorAll('.map-mode'));
         const historyList = document.getElementById('history-list');
         const historyCount = document.getElementById('history-count');
         const historyEmpty = document.getElementById('history-empty');
+        const rangeLabel = document.getElementById('range-label');
         const exportBtn = document.getElementById('export-map');
         const importBtn = document.getElementById('import-map');
         const importFile = document.getElementById('import-file');
+        const calendarPrev = document.getElementById('calendar-prev');
+        const calendarNext = document.getElementById('calendar-next');
+        const calendarMonth = document.getElementById('calendar-month');
+        const calendarGrid = document.getElementById('calendar-grid');
+        const calendarLabels = document.querySelector('.map-calendar__grid--labels');
 
         const DEFAULT_VIEW = [37.773972, -122.431297];
         const state = {
           mode: 'day',
-          query: '',
           anchor: new Date(),
         };
 
@@ -115,10 +121,44 @@
 
         let markerLayer = L.layerGroup().addTo(map);
 
-        dateInput.value = toInputValue(state.anchor);
+        renderCalendarLabels();
+        refresh();
 
-        function toInputValue(date) {
-          return new Date(date).toISOString().slice(0, 10);
+        function renderCalendarLabels() {
+          if (!calendarLabels) return;
+          const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+          calendarLabels.innerHTML = '';
+          labels.forEach((label) => {
+            const cell = document.createElement('div');
+            cell.className = 'map-calendar__label';
+            cell.textContent = label;
+            calendarLabels.appendChild(cell);
+          });
+        }
+
+        function toInputValue(value) {
+          const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+          if (Number.isNaN(date.getTime())) return '';
+          const offset = date.getTimezoneOffset();
+          const local = new Date(date.getTime() - offset * 60000);
+          return local.toISOString().slice(0, 10);
+        }
+
+        function fromInputValue(value) {
+          if (!value) return new Date();
+          const parts = value.split('-').map(Number);
+          if (parts.length === 3 && parts.every((part) => Number.isFinite(part))) {
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+          }
+          const parsed = new Date(value);
+          return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+        }
+
+        function ensureDate(value) {
+          if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? new Date() : new Date(value.getTime());
+          }
+          return fromInputValue(String(value));
         }
 
         function showToast(message) {
@@ -128,31 +168,57 @@
         }
 
         function refresh() {
-          state.anchor = new Date(dateInput.value || new Date());
-          const locations = getLocations();
-          renderMarkers(locations);
-          renderList(locations);
+          const anchor = ensureDate(state.anchor);
+          state.anchor = anchor;
+          dateInput.value = toInputValue(anchor);
+          updateModeButtons();
+          updateDateButton(anchor);
+          const allLocations = StorageAPI.loadLocations();
+          const { start, end } = resolveRange(state.mode, anchor);
+          const visibleLocations = filterByRange(allLocations, start, end).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          renderMarkers(visibleLocations);
+          renderList(visibleLocations);
+          renderCalendar(allLocations);
+          updateRangeLabel(anchor, visibleLocations.length);
         }
 
-        function getLocations() {
-          const anchor = new Date(dateInput.value || new Date());
-          let locations = [];
-          if (state.mode === 'day') {
-            locations = StorageAPI.locationsByDate(anchor);
-          } else if (state.mode === 'week') {
-            const start = startOfWeek(anchor);
-            const end = endOfWeek(anchor);
-            locations = StorageAPI.locationsInRange(start, end);
-          } else if (state.mode === 'month') {
-            const start = startOfMonth(anchor);
-            const end = endOfMonth(anchor);
-            locations = StorageAPI.locationsInRange(start, end);
+        function updateModeButtons() {
+          modeButtons.forEach((button) => {
+            const { mode } = button.dataset;
+            const isActive = mode === state.mode;
+            button.setAttribute('aria-pressed', String(isActive));
+            button.classList.toggle('is-active', isActive);
+          });
+        }
+
+        function updateDateButton(anchor) {
+          const label = anchor.toLocaleDateString(undefined, {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          });
+          dateButton.setAttribute('aria-label', `Select date (currently ${label})`);
+        }
+
+        function resolveRange(mode, anchor) {
+          if (mode === 'week') {
+            return { start: startOfWeek(anchor), end: endOfWeek(anchor) };
           }
-          if (state.query) {
-            const search = state.query.toLowerCase();
-            locations = locations.filter((location) => (location.note || '').toLowerCase().includes(search));
+          if (mode === 'month') {
+            return { start: startOfMonth(anchor), end: endOfMonth(anchor) };
           }
-          return locations.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          return { start: startOfDay(anchor), end: endOfDay(anchor) };
+        }
+
+        function filterByRange(list, start, end) {
+          return list.filter((location) => {
+            const created = new Date(location.created_at);
+            if (Number.isNaN(created.getTime())) return false;
+            if (start && created < start) return false;
+            if (end && created > end) return false;
+            return true;
+          });
         }
 
         function renderMarkers(locations) {
@@ -242,6 +308,74 @@
           });
         }
 
+        function renderCalendar(allLocations) {
+          if (!calendarGrid || !calendarMonth) return;
+          const anchor = ensureDate(state.anchor);
+          calendarMonth.textContent = anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+          calendarGrid.innerHTML = '';
+          const counts = new Map();
+          (allLocations || []).forEach((location) => {
+            const key = toInputValue(location.created_at);
+            if (!key) return;
+            counts.set(key, (counts.get(key) || 0) + 1);
+          });
+          const monthStart = startOfMonth(anchor);
+          const monthEnd = endOfMonth(anchor);
+          const calendarStart = startOfWeek(monthStart);
+          const calendarEnd = endOfWeek(monthEnd);
+          const todayKey = toInputValue(new Date());
+          for (let cursor = new Date(calendarStart); cursor <= calendarEnd; cursor.setDate(cursor.getDate() + 1)) {
+            const day = new Date(cursor);
+            const key = toInputValue(day);
+            const count = counts.get(key) || 0;
+            const isCurrentMonth = day.getMonth() === anchor.getMonth();
+            const isSelected = key === toInputValue(anchor);
+            const isToday = key === todayKey;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'map-calendar__day';
+            if (!isCurrentMonth) button.classList.add('is-outside');
+            if (isSelected) button.classList.add('is-selected');
+            if (isToday) button.classList.add('is-today');
+            if (count > 0) button.classList.add('has-data');
+            button.dataset.date = key;
+            button.setAttribute('role', 'gridcell');
+            button.setAttribute('aria-pressed', String(isSelected));
+            button.setAttribute('aria-label', formatCalendarAria(day, count));
+            button.innerHTML = `
+              <span class="map-calendar__date">${day.getDate()}</span>
+              ${count > 0 ? `<span class="map-calendar__count">${count}</span>` : ''}
+            `;
+            calendarGrid.appendChild(button);
+          }
+        }
+
+        function formatCalendarAria(date, count) {
+          const label = date.toLocaleDateString(undefined, {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          });
+          if (!count) return label;
+          return `${label} (${count} snapshot${count === 1 ? '' : 's'})`;
+        }
+
+        function updateRangeLabel(anchor, count) {
+          if (!rangeLabel) return;
+          const modeLabel = state.mode === 'week' ? 'Week' : state.mode === 'month' ? 'Month' : 'Day';
+          let detail = '';
+          if (state.mode === 'week') {
+            const { start, end } = resolveRange('week', anchor);
+            detail = `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+          } else if (state.mode === 'month') {
+            detail = anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+          } else {
+            detail = anchor.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+          }
+          rangeLabel.textContent = `${modeLabel} view · ${detail} · ${count} snapshot${count === 1 ? '' : 's'}`;
+        }
+
         function focusLocation(location) {
           map.setView([location.lat, location.lng], 15);
         }
@@ -255,7 +389,6 @@
           if (nextNote == null) return;
           StorageAPI.updateLocation(id, { note: nextNote });
           showToast('Location updated');
-          refresh();
         }
 
         function handleDelete(id) {
@@ -263,7 +396,6 @@
           if (!window.confirm('Delete this snapshot?')) return;
           StorageAPI.deleteLocation(id);
           showToast('Location removed');
-          refresh();
         }
 
         function requestGeolocation() {
@@ -292,7 +424,6 @@
             });
             showToast('Snapshot saved');
             map.setView([entry.lat, entry.lng], 15);
-            refresh();
           } catch (err) {
             console.warn('Device snapshot failed, using map center', err);
             const center = map.getCenter();
@@ -303,7 +434,6 @@
             });
             showToast('Manual snapshot saved');
             map.setView([entry.lat, entry.lng], 15);
-            refresh();
           }
         }
 
@@ -329,6 +459,18 @@
           const parsed = new Date(value);
           if (Number.isNaN(parsed.getTime())) return '';
           return parsed.toLocaleString();
+        }
+
+        function startOfDay(date) {
+          const d = new Date(date);
+          d.setHours(0, 0, 0, 0);
+          return d;
+        }
+
+        function endOfDay(date) {
+          const d = new Date(date);
+          d.setHours(23, 59, 59, 999);
+          return d;
         }
 
         function startOfWeek(date) {
@@ -362,25 +504,55 @@
           return end;
         }
 
+        function addMonths(date, amount) {
+          const d = new Date(date);
+          d.setMonth(d.getMonth() + amount);
+          return d;
+        }
+
         snapshotBtn.addEventListener('click', captureSnapshot);
         myLocationBtn.addEventListener('click', goToMyLocation);
-        showDayBtn.addEventListener('click', () => {
-          state.mode = 'day';
+        modeButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const { mode } = button.dataset;
+            if (!mode) return;
+            state.mode = mode;
+            refresh();
+          });
+        });
+        dateButton.addEventListener('click', () => {
+          if (typeof dateInput.showPicker === 'function') {
+            dateInput.showPicker();
+          } else {
+            dateInput.focus();
+            dateInput.click();
+          }
+        });
+        dateInput.addEventListener('change', (event) => {
+          state.anchor = fromInputValue(event.target.value);
           refresh();
         });
-        showWeekBtn.addEventListener('click', () => {
-          state.mode = 'week';
-          refresh();
-        });
-        showMonthBtn.addEventListener('click', () => {
-          state.mode = 'month';
-          refresh();
-        });
-        dateInput.addEventListener('change', refresh);
-        searchInput.addEventListener('input', (event) => {
-          state.query = event.target.value.trim();
-          refresh();
-        });
+        if (calendarPrev) {
+          calendarPrev.addEventListener('click', () => {
+            state.anchor = addMonths(state.anchor, -1);
+            refresh();
+          });
+        }
+        if (calendarNext) {
+          calendarNext.addEventListener('click', () => {
+            state.anchor = addMonths(state.anchor, 1);
+            refresh();
+          });
+        }
+        if (calendarGrid) {
+          calendarGrid.addEventListener('click', (event) => {
+            const target = event.target.closest('button[data-date]');
+            if (!target) return;
+            state.anchor = fromInputValue(target.dataset.date);
+            state.mode = 'day';
+            refresh();
+          });
+        }
         exportBtn.addEventListener('click', () => {
           const data = StorageAPI.exportJson();
           const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -403,7 +575,6 @@
             const payload = JSON.parse(text);
             const result = StorageAPI.importJson(payload);
             showToast(`Import complete: events +${result.events.added}, locations +${result.locations.added}`);
-            refresh();
           } catch (err) {
             console.error('Import failed', err);
             showToast('Import failed');
@@ -413,8 +584,6 @@
         });
 
         window.addEventListener('health:changed', refresh);
-
-        refresh();
 
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
