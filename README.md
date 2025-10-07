@@ -10,6 +10,10 @@ A lightweight offline-friendly health diary with shared storage. Use the Summary
 4. Edit the value in the diary table, verify Summary updates automatically (thanks to cross-tab sync).
 5. Export from the diary, then import the same file to validate merge behaviour.
 
+## Troubleshooting updates
+
+If the UI or map changes don't appear after deploying a new build, perform a hard refresh to bust the service worker cache (Ctrl+F5 on Windows/Linux, or use the Service Worker "Update" control in browser devtools).
+
 ## Structure
 
 ```

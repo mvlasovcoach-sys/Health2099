@@ -8,6 +8,8 @@ const APP_SHELL = [
   './shared/styles.css',
   './shared/storage.js',
   './shared/nav-loader.js',
+  './shared/vendor/leaflet/leaflet.css',
+  './shared/vendor/leaflet/leaflet.js',
   './includes/nav.html',
   './manifest.webmanifest',
   './assets/icons/icon-192.svg',
@@ -34,6 +36,16 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') {
     return;
   }
+
+  const url = new URL(event.request.url);
+  const isBypassedHost =
+    url.hostname === 'unpkg.com' || url.hostname.endsWith('.tile.openstreetmap.org') || url.hostname === 'tile.openstreetmap.org';
+
+  if (isBypassedHost) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request)
