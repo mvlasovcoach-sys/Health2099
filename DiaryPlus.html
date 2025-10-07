@@ -4,25 +4,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Diary Plus</title>
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./shared/styles.css" />
   </head>
-  <body>
+  <body class="app-shell">
     <div data-include="nav"></div>
-    <main>
-      <div class="container">
-        <header>
-          <h1>Diary</h1>
-          <p>Track hydration, sleep, movement, and mood with unified storage.</p>
+    <main class="app-main">
+      <div class="container flow">
+        <header class="page-header">
+          <span class="page-header__eyebrow">Diary+</span>
+          <h1>Daily health log</h1>
+          <p>Track hydration, sleep, movement, mood, and medications across every device. Snapshots sync automatically between tabs.</p>
+          <span class="badge">Unified storage</span>
         </header>
 
         <section class="card-grid" id="summary-cards"></section>
 
         <section>
-          <form id="event-form">
-            <h2>Add event</h2>
+          <form id="event-form" autocomplete="off">
+            <div>
+              <h2 style="margin:0; font-size:1.2rem; color:var(--color-heading);">Add event</h2>
+              <p style="margin:0; color:var(--color-muted); font-size:0.95rem;">Log anything from water intake to medications. All edits update instantly.</p>
+            </div>
             <div class="form-row">
               <label>
-                Type
+                <span>Type</span>
                 <select name="type" required>
                   <option value="water">Water (ml)</option>
                   <option value="caffeine">Caffeine (mg)</option>
@@ -35,35 +42,33 @@
                 </select>
               </label>
               <label>
-                Value
+                <span>Value</span>
                 <input type="number" name="value" step="0.1" placeholder="e.g. 250" />
               </label>
               <label>
-                Note
+                <span>Note</span>
                 <input type="text" name="note" placeholder="Optional notes" />
               </label>
             </div>
-            <div class="form-row">
+            <div class="toolbar">
               <button type="submit">Add event</button>
-              <div style="display:flex; gap:0.5rem; align-items:center;">
-                <button type="button" class="secondary" id="export-btn">Export JSON</button>
-                <button type="button" class="secondary" id="import-btn">Import JSON</button>
-                <input type="file" id="import-file" accept="application/json" style="display:none" />
-              </div>
+              <button type="button" class="secondary" id="export-btn">Export JSON</button>
+              <button type="button" class="secondary" id="import-btn">Import JSON</button>
+              <input type="file" id="import-file" accept="application/json" />
             </div>
           </form>
         </section>
 
-        <section class="table-wrapper">
+        <section class="table-wrapper" aria-live="polite">
           <table id="events-table">
             <thead>
               <tr>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Note</th>
-                <th>Created</th>
-                <th>Updated</th>
-                <th></th>
+                <th scope="col">Type</th>
+                <th scope="col">Value</th>
+                <th scope="col">Note</th>
+                <th scope="col">Created</th>
+                <th scope="col">Updated</th>
+                <th scope="col" aria-label="actions"></th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -72,7 +77,7 @@
       </div>
     </main>
 
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="./shared/storage.js"></script>
     <script src="./shared/nav-loader.js"></script>
@@ -98,7 +103,7 @@
         function showToast(message) {
           toast.textContent = message;
           toast.classList.add('visible');
-          setTimeout(() => toast.classList.remove('visible'), 2200);
+          setTimeout(() => toast.classList.remove('visible'), 2400);
         }
 
         function renderCards() {
@@ -112,6 +117,7 @@
             cardMarkup('Sleep this week', `${Math.round(week.sleep_min / 60)} h`),
             cardMarkup('Meds this month', `${month.meds_count}`),
             cardMarkup('Avg stress today', `${day.stress_avg}`),
+            cardMarkup('Energy avg today', `${day.energy_avg}`),
           ].join('');
         }
 
@@ -122,7 +128,7 @@
         function renderTable() {
           const visibleEvents = events.filter((event) => !event.deleted_at);
           if (!visibleEvents.length) {
-            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">No events yet</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No events yet. Add your first entry to unlock insights.</div></td></tr>`;
             return;
           }
           tableBody.innerHTML = '';
@@ -243,11 +249,13 @@
           try {
             const text = await file.text();
             const payload = JSON.parse(text);
-            const { added, updated } = StorageAPI.importJson(payload);
+            const result = StorageAPI.importJson(payload);
             events = StorageAPI.loadEvents();
             renderCards();
             renderTable();
-            showToast(`Импорт: +${added}, обновлено ${updated}`);
+            const eventsInfo = `events +${result.events.added}, updated ${result.events.updated}`;
+            const locationsInfo = result.locations ? `; locations +${result.locations.added}, updated ${result.locations.updated}` : '';
+            showToast(`Import: ${eventsInfo}${locationsInfo}`);
           } catch (err) {
             console.error('Import failed', err);
             showToast('Import failed');
@@ -263,6 +271,14 @@
         });
 
         refresh();
+
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./service-worker.js').catch((err) => {
+              console.warn('Service worker registration failed', err);
+            });
+          });
+        }
       })();
     </script>
   </body>

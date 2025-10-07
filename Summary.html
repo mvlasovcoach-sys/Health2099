@@ -4,25 +4,28 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Summary</title>
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./shared/styles.css" />
   </head>
-  <body>
+  <body class="app-shell">
     <div data-include="nav"></div>
-    <main>
-      <div class="container">
-        <header>
-          <h1>Summary</h1>
-          <p>Overview of your recent health metrics with unified storage.</p>
+    <main class="app-main">
+      <div class="container flow">
+        <header class="page-header">
+          <span class="page-header__eyebrow">Summary</span>
+          <h1>Wellness snapshot</h1>
+          <p>Review trends, averages, and quick actions powered by your shared storage. Everything updates live across tabs.</p>
+          <span class="badge">Live insights</span>
         </header>
 
         <section class="card-grid" id="summary-cards"></section>
-
         <section class="card-grid" id="averages"></section>
 
         <section class="card">
           <h2>Quick actions</h2>
-          <p>Log common events with one tap. Use the diary for detailed edits.</p>
-          <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+          <p>Log frequent habits without opening the diary.</p>
+          <div class="quick-actions">
             <button type="button" data-action="water" data-value="250">+250 ml water</button>
             <button type="button" data-action="water" data-value="500">+500 ml water</button>
             <button type="button" class="secondary" data-action="steps" data-value="1000">+1k steps</button>
@@ -30,14 +33,14 @@
           </div>
         </section>
 
-        <section class="table-wrapper">
+        <section class="table-wrapper" aria-live="polite">
           <table id="recent-table">
             <thead>
               <tr>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Note</th>
-                <th>Created</th>
+                <th scope="col">Type</th>
+                <th scope="col">Value</th>
+                <th scope="col">Note</th>
+                <th scope="col">Created</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -46,7 +49,7 @@
       </div>
     </main>
 
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="./shared/storage.js"></script>
     <script src="./shared/nav-loader.js"></script>
@@ -61,7 +64,7 @@
         function showToast(message) {
           toast.textContent = message;
           toast.classList.add('visible');
-          setTimeout(() => toast.classList.remove('visible'), 2200);
+          setTimeout(() => toast.classList.remove('visible'), 2400);
         }
 
         function renderSummary() {
@@ -90,7 +93,7 @@
         function renderRecent() {
           const events = StorageAPI.loadEvents().filter((event) => !event.deleted_at).slice(0, 8);
           if (!events.length) {
-            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:#64748b;">No events logged yet</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="4"><div class="empty-state">No events logged yet.</div></td></tr>`;
             return;
           }
           tableBody.innerHTML = '';
@@ -159,6 +162,14 @@
         window.addEventListener('health:changed', refresh);
 
         refresh();
+
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./service-worker.js').catch((err) => {
+              console.warn('Service worker registration failed', err);
+            });
+          });
+        }
       })();
     </script>
   </body>

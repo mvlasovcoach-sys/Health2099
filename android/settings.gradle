@@ -1,0 +1,3 @@
+rootProject.name = 'Health2099'
+include ':app'
+apply from: 'capacitor.settings.gradle'
