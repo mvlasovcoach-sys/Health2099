@@ -42,6 +42,8 @@
                 <button type="button" class="secondary map-mode" id="show-day" data-mode="day" aria-pressed="true">Day</button>
                 <button type="button" class="secondary map-mode" id="show-week" data-mode="week" aria-pressed="false">Week</button>
                 <button type="button" class="secondary map-mode" id="show-month" data-mode="month" aria-pressed="false">Month</button>
+                <label for="search-note" class="visually-hidden">Search by note</label>
+                <input type="search" id="search-note" placeholder="Search by note" autocomplete="off" />
                 <span class="map-toolbar__spacer" aria-hidden="true"></span>
                 <button type="button" class="secondary" id="export-map">Export JSON</button>
                 <button type="button" class="secondary" id="import-map">Import JSON</button>
@@ -65,7 +67,7 @@
               <div id="history-count" class="tag">0 snapshots</div>
               <div id="history-list" class="map-list" aria-live="polite"></div>
               <div class="empty-state" id="history-empty" style="display:none;">
-                <p style="margin:0 0 0.75rem;">No snapshots yet for this range.</p>
+                <p style="margin:0 0 0.75rem;" data-empty-primary>No snapshots yet for this range.</p>
                 <p style="margin:0; font-size:0.85rem;">Tip: enable location on HTTPS or use localhost for device snapshots. Otherwise, capture from the map center.</p>
               </div>
             </section>
@@ -92,9 +94,11 @@
         const dateButton = document.getElementById('date-button');
         const dateInput = document.getElementById('date-input');
         const modeButtons = Array.from(document.querySelectorAll('.map-mode'));
+        const searchInput = document.getElementById('search-note');
         const historyList = document.getElementById('history-list');
         const historyCount = document.getElementById('history-count');
         const historyEmpty = document.getElementById('history-empty');
+        const historyEmptyPrimary = historyEmpty ? historyEmpty.querySelector('[data-empty-primary]') : null;
         const rangeLabel = document.getElementById('range-label');
         const exportBtn = document.getElementById('export-map');
         const importBtn = document.getElementById('import-map');
@@ -109,6 +113,7 @@
         const state = {
           mode: 'day',
           anchor: new Date(),
+          search: '',
         };
 
         const map = L.map('map', { zoomControl: true });
@@ -120,6 +125,7 @@
         }).addTo(map);
 
         let markerLayer = L.layerGroup().addTo(map);
+        let markerIndex = new Map();
 
         renderCalendarLabels();
         refresh();
@@ -175,7 +181,16 @@
           updateDateButton(anchor);
           const allLocations = StorageAPI.loadLocations();
           const { start, end } = resolveRange(state.mode, anchor);
-          const visibleLocations = filterByRange(allLocations, start, end).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          const searchTerm = (state.search || '').trim().toLowerCase();
+          const visibleLocations = filterByRange(allLocations, start, end)
+            .filter((location) => {
+              if (!searchTerm) return true;
+              return (location.note || '').toLowerCase().includes(searchTerm);
+            })
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          if (searchInput) {
+            searchInput.value = state.search;
+          }
           renderMarkers(visibleLocations);
           renderList(visibleLocations);
           renderCalendar(allLocations);
@@ -226,11 +241,13 @@
             markerLayer.removeFrom(map);
           }
           markerLayer = locations.length > 100 ? L.markerClusterGroup({ chunkedLoading: true }) : L.layerGroup();
+          markerIndex = new Map();
           locations.forEach((location) => {
             const marker = L.marker([location.lat, location.lng]);
             marker.locationId = location.id;
             marker.bindPopup(popupContent(location));
             markerLayer.addLayer(marker);
+            markerIndex.set(location.id, marker);
           });
           markerLayer.addTo(map);
           if (locations.length) {
@@ -282,6 +299,9 @@
           historyList.innerHTML = '';
           historyCount.textContent = `${locations.length} snapshot${locations.length === 1 ? '' : 's'}`;
           if (!locations.length) {
+            if (historyEmptyPrimary) {
+              historyEmptyPrimary.textContent = state.search ? 'No snapshots match your search.' : 'No snapshots yet for this range.';
+            }
             historyEmpty.style.display = 'block';
             return;
           }
@@ -378,6 +398,10 @@
 
         function focusLocation(location) {
           map.setView([location.lat, location.lng], 15);
+          const marker = markerIndex.get(location.id);
+          if (marker && marker.getPopup()) {
+            marker.openPopup();
+          }
         }
 
         function handleEdit(id) {
@@ -388,6 +412,7 @@
           const nextNote = window.prompt('Update note', target.note || '');
           if (nextNote == null) return;
           StorageAPI.updateLocation(id, { note: nextNote });
+          refresh();
           showToast('Location updated');
         }
 
@@ -395,6 +420,7 @@
           if (!id) return;
           if (!window.confirm('Delete this snapshot?')) return;
           StorageAPI.deleteLocation(id);
+          refresh();
           showToast('Location removed');
         }
 
@@ -424,6 +450,7 @@
             });
             showToast('Snapshot saved');
             map.setView([entry.lat, entry.lng], 15);
+            refresh();
           } catch (err) {
             console.warn('Device snapshot failed, using map center', err);
             const center = map.getCenter();
@@ -434,6 +461,7 @@
             });
             showToast('Manual snapshot saved');
             map.setView([entry.lat, entry.lng], 15);
+            refresh();
           }
         }
 
@@ -520,6 +548,12 @@
             refresh();
           });
         });
+        if (searchInput) {
+          searchInput.addEventListener('input', (event) => {
+            state.search = event.target.value;
+            refresh();
+          });
+        }
         dateButton.addEventListener('click', () => {
           if (typeof dateInput.showPicker === 'function') {
             dateInput.showPicker();
