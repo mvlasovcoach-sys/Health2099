@@ -165,6 +165,16 @@ function notify(payload) {
   }
 }
 
+function getTimezone() {
+  const tz = (db && db.settings && db.settings.tz) || DEFAULT_DB.settings.tz;
+  if (tz) return tz;
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch (err) {
+    return 'UTC';
+  }
+}
+
 function createLog(type, value, options = {}) {
   const now = new Date();
   const tzOffset = now.getTimezoneOffset();
@@ -288,8 +298,9 @@ function recentLogs(hours = 24) {
 }
 
 function aggregateDay(date = new Date()) {
-  const start = startOfDay(date);
-  const end = endOfDay(date);
+  const tz = getTimezone();
+  const start = startOfDay(date, tz);
+  const end = endOfDay(date, tz);
   return aggregateRange(start, end);
 }
 
@@ -331,24 +342,70 @@ function aggregateRange(start, end) {
 
 function streaks(days = 14) {
   const dayMap = new Map();
+  const tz = getTimezone();
   for (let i = 0; i < days; i += 1) {
-    const day = startOfDay(new Date(Date.now() - i * 86400000));
+    const reference = new Date(Date.now() - i * 86400000);
+    const day = startOfDay(reference, tz);
     const key = day.toISOString();
     dayMap.set(key, aggregateDay(day));
   }
   return dayMap;
 }
 
-function startOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
+function startOfDay(date, tz = getTimezone()) {
+  try {
+    const parts = zonedParts(date, tz);
+    return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 0, 0, 0, 0));
+  } catch (err) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
 }
 
-function endOfDay(date) {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
+function endOfDay(date, tz = getTimezone()) {
+  try {
+    const parts = zonedParts(date, tz);
+    return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 23, 59, 59, 999));
+  } catch (err) {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }
+}
+
+function startOfDayISO(date = new Date(), tz = getTimezone()) {
+  return startOfDay(date, tz).toISOString();
+}
+
+function zonedParts(date, tz) {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const result = {
+    year: 1970,
+    month: 1,
+    day: 1,
+    hour: 0,
+    minute: 0,
+    second: 0,
+  };
+  parts.forEach((part) => {
+    if (part.type === 'literal') return;
+    const value = Number(part.value);
+    if (Number.isFinite(value)) {
+      result[part.type] = value;
+    }
+  });
+  return result;
 }
 
 export const SharedStorage = {
@@ -369,6 +426,7 @@ export const SharedStorage = {
   flushQueue,
   removeQueue,
   createLog,
+  startOfDayISO,
 };
 
 function createId(prefix = 'id') {

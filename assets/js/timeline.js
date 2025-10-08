@@ -9,7 +9,7 @@ export function initTimeline() {
   if (!list) return;
 
   function render() {
-    const logs = SharedStorage.listLogs({ since: startOfDayISO(new Date()) });
+    const logs = SharedStorage.listLogs({ since: SharedStorage.startOfDayISO(new Date()) });
     list.innerHTML = '';
     if (headerCount) {
       headerCount.textContent = `${logs.length} events`;
@@ -172,8 +172,3 @@ function formatValue(log) {
   return `${log.value} ${unit}`;
 }
 
-function startOfDayISO(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
