@@ -57,5 +57,36 @@ Health2099 — Top Bar (Energy + SRV + Device)
     syncBtn && syncBtn.addEventListener('click',()=>{ const d=JSON.parse(localStorage.getItem('h2099_device')||'{}'); d.minutesSince=0; d.source='auto'; window.H2099TopBar.setDevice(d); });
   }
 
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>{inject(); initAPI();}); else {inject(); initAPI();}
+  /* --- robust bootstrap --- */
+  function safeInit() {
+    const need =
+      !document.querySelector('#card-energy .ring-val') ||
+      !document.getElementById('energy-value') ||
+      !document.querySelector('#card-srv .ring-val') ||
+      !document.getElementById('srv-value');
+
+    if (need) {
+      try { inject(); } catch (_) {}
+    }
+    const ok =
+      document.querySelector('#card-energy .ring-val') &&
+      document.getElementById('energy-value') &&
+      document.querySelector('#card-srv .ring-val') &&
+      document.getElementById('srv-value');
+
+    if (ok) {
+      try { initAPI(); } catch (e) { console.warn('TopBar init error', e); }
+    } else {
+      // Try again shortly; stops once the DOM exists
+      setTimeout(safeInit, 50);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', safeInit);
+  } else {
+    // In case of async module loaders or late head injection
+    setTimeout(safeInit, 0);
+  }
+  /* --- end bootstrap --- */
 })();
