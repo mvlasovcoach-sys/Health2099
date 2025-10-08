@@ -8,7 +8,7 @@ const ACTIONS = [
   { id: 'water-500', type: 'water', value: 500, label: '+500 ml water', hint: 'Tall glass' },
   { id: 'steps-1k', type: 'steps', value: 1000, label: '+1k steps', hint: 'Quick walk' },
   { id: 'sleep-8h', type: 'sleep', value: 480, label: '+8h sleep', hint: 'Log rest' },
-  { id: 'meds', type: 'meds', value: 1, label: 'Take meds', hint: 'Mark taken' },
+  { id: 'meds', type: 'med', value: 1, label: 'Take meds', hint: 'Mark taken' },
   { id: 'note', type: 'note', value: null, label: 'Add note', hint: 'Remember this' },
 ];
 

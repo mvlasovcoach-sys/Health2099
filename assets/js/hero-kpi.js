@@ -5,10 +5,11 @@ const HERO_ID = 'hero-kpi';
 
 const METRICS = [
   {
-    id: 'water',
+    id: 'hydration',
     label: 'Hydration',
     icon: '💧',
-    targetKey: 'water',
+    totalKey: 'water_ml',
+    targetKey: 'water_ml',
     statusType: 'hydration',
     better: 'high',
     formatAverage: (value) => `${formatNumber(Math.round(value))} ml avg`,
@@ -19,7 +20,8 @@ const METRICS = [
     id: 'sleep',
     label: 'Sleep',
     icon: '🌙',
-    targetKey: 'sleep',
+    totalKey: 'sleep_min',
+    targetKey: 'sleep_min',
     statusType: 'sleep',
     better: 'high',
     formatAverage: (value) => `${minutesToHours(value)} avg`,
@@ -30,6 +32,7 @@ const METRICS = [
     id: 'steps',
     label: 'Steps',
     icon: '👟',
+    totalKey: 'steps',
     targetKey: 'steps',
     statusType: 'steps',
     better: 'high',
@@ -41,7 +44,8 @@ const METRICS = [
     id: 'caffeine',
     label: 'Caffeine',
     icon: '☕',
-    targetKey: 'caffeine',
+    totalKey: 'caffeine_mg',
+    targetKey: 'caffeine_mg',
     statusType: 'caffeine',
     better: 'low',
     formatAverage: (value) => `${formatNumber(Math.round(value))} mg avg`,
@@ -114,7 +118,7 @@ export function initHeroKpi() {
     const targets = SharedStorage.getTargets();
 
     const metricPayloads = METRICS.map((metric) => {
-      const total = totals[metric.id] || 0;
+      const total = totals[metric.totalKey] || 0;
       const dailyTarget = targets[metric.targetKey] || 0;
       const aggregateTarget = dailyTarget * range.days;
       const progressPercent = aggregateTarget ? percent(total, aggregateTarget) : 0;
@@ -149,7 +153,7 @@ export function initHeroKpi() {
     if (previousRange) {
       const previousTotals = SharedStorage.aggregateRange(previousRange.start, previousRange.end);
       const previousCompletions = METRICS.map((metric) => {
-        const total = previousTotals[metric.id] || 0;
+        const total = previousTotals[metric.totalKey] || 0;
         const dailyTarget = targets[metric.targetKey] || 0;
         const aggregateTarget = dailyTarget * previousRange.days;
         const progressPercent = aggregateTarget ? percent(total, aggregateTarget) : 0;

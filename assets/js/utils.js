@@ -30,34 +30,29 @@ export function percent(value, target) {
 }
 
 export function statusFromRules(type, total, target, context = {}) {
+  const pct = target ? percent(total, target) : 0;
   switch (type) {
-    case 'hydration': {
-      if (total >= target) return 'on-track';
-      if (percent(total, target) < 60) return 'warning';
-      return 'progress';
-    }
-    case 'sleep': {
-      const hours = total / 60;
-      if (hours >= 7) return 'on-track';
-      if (hours < 6) return 'warning';
-      return 'progress';
-    }
+    case 'hydration':
+    case 'sleep':
     case 'steps': {
-      if (total >= 8000) return 'on-track';
-      if (total < 5000) return 'warning';
-      return 'progress';
+      if (!target) return 'neutral';
+      if (pct >= 100) return 'on-track';
+      if (pct >= 60) return 'warning';
+      return 'danger';
     }
     case 'caffeine': {
-      if (total > 300) return 'warning';
-      if (total > target) return 'warning';
-      return 'on-track';
+      if (!target) return 'neutral';
+      const ratio = target ? total / target : 0;
+      if (ratio <= 0.8) return 'on-track';
+      if (ratio <= 1) return 'warning';
+      return 'danger';
     }
     case 'meds': {
-      if (context.missed) return 'danger';
-      return context.medsTaken ? 'on-track' : 'progress';
+      if (!context.totalScheduled) return 'neutral';
+      return context.medsTaken >= context.totalScheduled ? 'on-track' : 'danger';
     }
     default:
-      return 'progress';
+      return 'neutral';
   }
 }
 
@@ -84,7 +79,7 @@ export function iconForType(type) {
       return '🌙';
     case 'caffeine':
       return '☕';
-    case 'meds':
+    case 'med':
       return '💊';
     default:
       return '🧠';
@@ -101,6 +96,8 @@ export function unitLabel(type) {
       return 'min';
     case 'caffeine':
       return 'mg';
+    case 'med':
+      return 'dose';
     default:
       return '';
   }
