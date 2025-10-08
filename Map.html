@@ -7,10 +7,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="stylesheet" href="./shared/styles.css" />
 
-  <!-- TopBar: один-единственный тег -->
-  <script src="/Health2099/assets/topbar.bundle.js?v=6" defer></script>
-  <script>window.addEventListener('load',()=>console.log('TopBar type:', typeof window.H2099TopBar));</script>
-</head>
+  </head>
   <body class="app-shell" data-page="map">
     <div data-include="nav"></div>
     <main class="app-main">
@@ -56,7 +53,9 @@
       </div>
     </main>
 
-    <script src="./shared/nav-loader.js" defer></script>
+    <script src="./shared/storage.js"></script>
+    <script src="./shared/nav-loader.js"></script>
+    <script>window.addEventListener('load',()=>console.log('TopBar type:', typeof window.H2099TopBar));</script>
     <script>
       (function () {
         const LS_LOCATIONS = 'health_locations_v1';
