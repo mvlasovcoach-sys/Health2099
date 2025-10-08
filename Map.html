@@ -200,7 +200,8 @@
         function initMap() {
           const last = loadLocations().slice(-1)[0];
           const center = last ? [last.lat, last.lng] : [52.37, 4.89];
-          map = L.map('map');
+          const mapElement = document.getElementById('map');
+          map = L.map(mapElement);
           map.setView(center, last ? 13 : 12);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -208,6 +209,9 @@
           }).addTo(map);
           markersLayer = L.layerGroup().addTo(map);
           setTimeout(() => map.invalidateSize(), 0);
+          if (mapElement) {
+            mapElement.__h2099_map_ready = true;
+          }
         }
 
         function updateCurrentPosition(lat, lng, accuracy) {
@@ -447,8 +451,8 @@
         window.addEventListener('health:changed', render);
 
         function bootstrap() {
-          if (typeof L === 'undefined') {
-            requestAnimationFrame(bootstrap);
+          if (typeof window.L === 'undefined') {
+            setTimeout(bootstrap, 50);
             return;
           }
           initMap();
@@ -458,5 +462,48 @@
         bootstrap();
       })();
     </script>
+    <script>
+(function(){
+  // Utility: run cb when Leaflet is available
+  function whenLeaflet(cb){
+    if (window.L) return cb();
+    const onReady = () => window.L && cb();
+    window.addEventListener('load', onReady);
+    const t = setInterval(() => { if (window.L){ clearInterval(t); cb(); }}, 50);
+  }
+
+  whenLeaflet(function initMapSafe(){
+    const el = document.getElementById('map');
+    if (!el) return;
+
+    // If a map already exists, skip re-init
+    if (el.__h2099_map_ready) return;
+    el.__h2099_map_ready = true;
+
+    // Default center (Moscow) and zoom; adjust if app has saved coords
+    var center = [55.751244, 37.618423], zoom = 12;
+
+    // Create map
+    var map = L.map(el).setView(center, zoom);
+
+    // OSM tiles with CORS friendly options
+    var tiles = L.tileLayer(
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        maxZoom: 19,
+        crossOrigin: true,
+        attribution: '&copy; OpenStreetMap contributors'
+      }
+    ).addTo(map);
+
+    // Hide offline notice if present
+    var offline = document.querySelector('[data-map-offline], .map-offline, .map-empty');
+    if (offline) offline.style.display = 'none';
+
+    // Diagnostics
+    console.log('Map init ok, Leaflet:', !!window.L);
+  });
+})();
+</script>
   </body>
 </html>
