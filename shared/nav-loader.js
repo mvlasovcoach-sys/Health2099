@@ -2,7 +2,7 @@
   const ID = 'topbar-bundle';
   if (!document.getElementById(ID)) {
     const s = document.createElement('script');
-    s.src = '/Health2099/assets/topbar.bundle.js?v=6';
+    s.src = '/Health2099/assets/topbar.bundle.js?v=8';
     s.defer = true;
     s.id = ID;
     document.head.appendChild(s);
