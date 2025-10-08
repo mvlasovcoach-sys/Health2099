@@ -58,8 +58,8 @@ export function initHeader() {
     const now = new Date();
     const dateLabel = formatDateRange(now);
     const city = settings.city ? ` · ${settings.city}` : '';
-    const battery = settings.deviceBattery ?? 0;
-    const lastPing = settings.lastDevicePing ? new Date(settings.lastDevicePing) : null;
+    const battery = settings.batteryPct;
+    const lastPing = settings.lastDevicePingISO ? new Date(settings.lastDevicePingISO) : null;
     const status = computeDeviceStatus(lastPing);
 
     const dateEl = container.querySelector('[data-date]');
@@ -71,7 +71,7 @@ export function initHeader() {
 
     if (dateEl) dateEl.textContent = dateLabel;
     if (cityEl) cityEl.textContent = city;
-    if (batteryEl) batteryEl.textContent = `${battery}%`;
+    if (batteryEl) batteryEl.textContent = Number.isFinite(battery) ? `${battery}%` : '—';
     if (statusEl) statusEl.dataset.state = status.color;
     if (statusIconEl) statusIconEl.textContent = status.icon;
     if (statusLabelEl) statusLabelEl.textContent = status.label;

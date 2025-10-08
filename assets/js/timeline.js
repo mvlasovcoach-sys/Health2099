@@ -8,7 +8,7 @@ const RANGE_OPTIONS = [
   { id: '7d', label: '7d', heading: 'Last 7 days', days: 7 },
   { id: '30d', label: '30d', heading: 'Last 30 days', days: 30 },
 ];
-const TYPE_OPTIONS = ['water', 'steps', 'sleep', 'caffeine', 'meds', 'note'];
+const TYPE_OPTIONS = ['water', 'steps', 'sleep', 'caffeine', 'med', 'note'];
 
 let currentRange = RANGE_OPTIONS[0];
 

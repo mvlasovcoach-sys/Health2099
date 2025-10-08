@@ -4,11 +4,11 @@ import { formatNumber, minutesToHours } from './utils.js';
 const SECTION_ID = 'kpi-grid';
 
 const METRICS = [
-  { id: 'hydration', label: 'Hydration', type: 'water', unit: 'ml' },
-  { id: 'sleep', label: 'Sleep', type: 'sleep', unit: 'min' },
-  { id: 'steps', label: 'Steps', type: 'steps', unit: 'steps' },
-  { id: 'caffeine', label: 'Caffeine', type: 'caffeine', unit: 'mg' },
-  { id: 'meds', label: 'Meds', type: 'meds', unit: 'dose' },
+  { id: 'hydration', label: 'Hydration', totalKey: 'water_ml', targetKey: 'water_ml', unit: 'ml' },
+  { id: 'sleep', label: 'Sleep', totalKey: 'sleep_min', targetKey: 'sleep_min', unit: 'min' },
+  { id: 'steps', label: 'Steps', totalKey: 'steps', targetKey: 'steps', unit: 'steps' },
+  { id: 'caffeine', label: 'Caffeine', totalKey: 'caffeine_mg', targetKey: 'caffeine_mg', unit: 'mg' },
+  { id: 'meds', label: 'Meds', totalKey: 'meds_taken', targetKey: null, unit: 'dose' },
 ];
 
 function resolveContainer() {
@@ -33,15 +33,16 @@ function computeMetrics() {
   const now = new Date();
   const targets = SharedStorage.getTargets();
   const today = SharedStorage.aggregateDay(now);
-  const medsScheduled = Array.isArray(targets.meds) ? targets.meds.length : 0;
+  const medsToday = SharedStorage.getMedsToday();
+  const medsScheduled = medsToday.length;
   const medsTaken = SharedStorage.listLogs({
-    type: 'meds',
+    type: 'med',
     since: SharedStorage.startOfDayISO(now),
   }).length;
 
   return METRICS.map((metric) => {
     const targetValue = getTargetValue(metric, targets, medsScheduled);
-    const actualValue = metric.id === 'meds' ? medsTaken : today[metric.type] || 0;
+    const actualValue = metric.id === 'meds' ? medsTaken : today[metric.totalKey] || 0;
     const percent = computePercent(metric.id, actualValue, targetValue, medsScheduled);
     const cappedDegrees = toDegrees(metric.id, percent);
     const status = resolveStatus(metric.id, actualValue, targetValue, percent, {
@@ -70,13 +71,13 @@ function computeMetrics() {
 function getTargetValue(metric, targets, medsScheduled) {
   switch (metric.id) {
     case 'hydration':
-      return targets.water || 0;
+      return targets.water_ml || 0;
     case 'sleep':
-      return targets.sleep || 0;
+      return targets.sleep_min || 0;
     case 'steps':
       return targets.steps || 0;
     case 'caffeine':
-      return targets.caffeine || 0;
+      return targets.caffeine_mg || 0;
     case 'meds':
       return medsScheduled;
     default:

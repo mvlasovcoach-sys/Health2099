@@ -1,7 +1,7 @@
 import { SharedStorage } from './sharedStorage.js';
-import { minutesToHours } from './utils.js';
+import { minutesToHours, formatNumber } from './utils.js';
 
-let lastStreaks = { water: 0, steps: 0, sleep: 0 };
+let lastStreaks = { water_ml: 0, steps: 0, sleep_min: 0 };
 
 export function initStreaks() {
   const list = document.getElementById('streak-list');
@@ -13,9 +13,27 @@ export function initStreaks() {
     const streakMap = SharedStorage.streaks(14);
     const entries = Array.from(streakMap.entries());
     const metrics = [
-      { id: 'water', label: 'Hydration streak', target: targets.water, formatter: (value) => `${value} ml` },
-      { id: 'steps', label: 'Steps streak', target: targets.steps, formatter: (value) => `${value} steps` },
-      { id: 'sleep', label: 'Sleep streak', target: targets.sleep, formatter: (value) => minutesToHours(value) },
+      {
+        id: 'water_ml',
+        label: 'Hydration streak',
+        target: targets.water_ml,
+        formatter: (value) => `${formatNumber(value)} ml`,
+        badgeKey: 'water',
+      },
+      {
+        id: 'steps',
+        label: 'Steps streak',
+        target: targets.steps,
+        formatter: (value) => `${formatNumber(value)} steps`,
+        badgeKey: 'steps',
+      },
+      {
+        id: 'sleep_min',
+        label: 'Sleep streak',
+        target: targets.sleep_min,
+        formatter: (value) => minutesToHours(value),
+        badgeKey: 'sleep',
+      },
     ];
 
     list.innerHTML = '';
@@ -28,7 +46,7 @@ export function initStreaks() {
       const row = document.createElement('div');
       row.className = 'streak card-hover';
       row.innerHTML = `
-        <span aria-hidden="true">${metricIcon(metric.id)}</span>
+        <span aria-hidden="true">${metricIcon(metric.badgeKey || metric.id)}</span>
         <div>
           <strong>${metric.label}</strong>
           <div class="timeline-meta">${streakValue} day streak · Today ${metric.formatter(todayValue)}</div>
@@ -65,7 +83,7 @@ function computeStreak(entries, metric, target) {
   let streak = 0;
   for (let i = 0; i < entries.length; i += 1) {
     const value = entries[i][1][metric] || 0;
-    const success = metric === 'caffeine' ? value <= target : value >= target;
+    const success = metric === 'caffeine_mg' ? value <= target : value >= target;
     if (success) {
       streak += 1;
     } else {
@@ -79,11 +97,11 @@ function buildBadges(streaks) {
   const badges = [];
   Object.entries(streaks).forEach(([metric, value]) => {
     if (value >= 14) {
-      badges.push(`${titleCase(metric)} Ascendant`);
+      badges.push(`${friendlyMetricName(metric)} Ascendant`);
     } else if (value >= 7) {
-      badges.push(`${titleCase(metric)} Guardian`);
+      badges.push(`${friendlyMetricName(metric)} Guardian`);
     } else if (value >= 3) {
-      badges.push(`${titleCase(metric)} Builder`);
+      badges.push(`${friendlyMetricName(metric)} Builder`);
     }
   });
   return badges;
@@ -98,10 +116,12 @@ function badgeLabel(streak) {
 
 function metricIcon(metric) {
   switch (metric) {
+    case 'water_ml':
     case 'water':
       return '💧';
     case 'steps':
       return '🔥';
+    case 'sleep_min':
     case 'sleep':
       return '🌙';
     default:
@@ -109,6 +129,15 @@ function metricIcon(metric) {
   }
 }
 
-function titleCase(text) {
-  return text.charAt(0).toUpperCase() + text.slice(1);
+function friendlyMetricName(metric) {
+  switch (metric) {
+    case 'water_ml':
+      return 'Hydration';
+    case 'sleep_min':
+      return 'Sleep';
+    case 'steps':
+      return 'Steps';
+    default:
+      return metric.charAt(0).toUpperCase() + metric.slice(1);
+  }
 }

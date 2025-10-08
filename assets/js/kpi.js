@@ -8,35 +8,35 @@ const KPI_CONFIG = [
   {
     id: 'hydration',
     label: 'Hydration',
-    type: 'water',
+    totalKey: 'water_ml',
     formatter: (value) => `${formatNumber(value)} ml`,
     goalFormatter: (goal) => `${formatNumber(goal)} ml`,
   },
   {
     id: 'sleep',
     label: 'Sleep',
-    type: 'sleep',
+    totalKey: 'sleep_min',
     formatter: (value) => minutesToHours(value),
     goalFormatter: (goal) => `${minutesToHours(goal)} target`,
   },
   {
     id: 'steps',
     label: 'Steps',
-    type: 'steps',
+    totalKey: 'steps',
     formatter: (value) => formatNumber(value),
     goalFormatter: (goal) => `${formatNumber(goal)} goal`,
   },
   {
     id: 'caffeine',
     label: 'Caffeine',
-    type: 'caffeine',
+    totalKey: 'caffeine_mg',
     formatter: (value) => `${formatNumber(value)} mg`,
     goalFormatter: (goal) => `${formatNumber(goal)} mg`,
   },
   {
     id: 'meds',
     label: 'Meds',
-    type: 'meds',
+    totalKey: 'meds_taken',
     formatter: (value) => `${value} taken`,
     goalFormatter: (_, context) => `${context?.targetCount || 0} scheduled`,
   },
@@ -49,16 +49,18 @@ export function initKpi() {
   function render() {
     const targets = SharedStorage.getTargets();
     const today = SharedStorage.aggregateDay(new Date());
-    const medsTarget = Array.isArray(targets.meds) ? targets.meds.length : 0;
-    const medsTaken = SharedStorage.listLogs({ type: 'meds', since: SharedStorage.startOfDayISO(new Date()) }).length;
-    const context = { targetCount: medsTarget, medsTaken, missed: medsTarget > medsTaken };
+    const medsToday = SharedStorage.getMedsToday();
+    const medsTarget = medsToday.length;
+    const medsTaken = SharedStorage.listLogs({ type: 'med', since: SharedStorage.startOfDayISO(new Date()) }).length;
+    const context = { targetCount: medsTarget, medsTaken, totalScheduled: medsTarget };
 
     grid.innerHTML = '';
 
     KPI_CONFIG.forEach((config) => {
       const targetValue = getTargetValue(config.id, targets, context);
-      const totalValue = config.id === 'meds' ? medsTaken : today[config.type] || 0;
-      const status = statusFromRules(config.id === 'hydration' ? 'hydration' : config.id, totalValue, targetValue, context);
+      const totalValue = config.id === 'meds' ? medsTaken : today[config.totalKey] || 0;
+      const statusType = config.id === 'hydration' ? 'hydration' : config.id;
+      const status = statusFromRules(statusType, totalValue, targetValue, context);
       const badge = badgeLabel(status);
       const completion = targetValue ? percent(totalValue, targetValue) : 100;
       const card = document.createElement('article');
@@ -88,7 +90,7 @@ export function initKpi() {
 
       const sparkline = document.createElement('canvas');
       sparkline.className = 'sparkline';
-      const series = computeSeries(config.type);
+      const series = computeSeries(config.totalKey);
       lazySparkline(sparkline, series, 'rgba(96, 165, 250, 0.6)');
 
       card.append(header, value, progress, sparkline);
@@ -100,13 +102,13 @@ export function initKpi() {
   SharedStorage.onChange(() => render());
 }
 
-function computeSeries(type) {
+function computeSeries(totalKey) {
   const days = 7;
   const series = [];
   for (let i = days - 1; i >= 0; i -= 1) {
     const date = new Date(Date.now() - i * 86400000);
     const aggregate = SharedStorage.aggregateDay(date);
-    series.push(aggregate[type] || 0);
+    series.push(aggregate[totalKey] || 0);
   }
   return series;
 }
@@ -114,13 +116,13 @@ function computeSeries(type) {
 function getTargetValue(id, targets, context) {
   switch (id) {
     case 'hydration':
-      return targets.water;
+      return targets.water_ml;
     case 'sleep':
-      return targets.sleep;
+      return targets.sleep_min;
     case 'steps':
       return targets.steps;
     case 'caffeine':
-      return targets.caffeine;
+      return targets.caffeine_mg;
     case 'meds':
       return context?.targetCount || 0;
     default:

@@ -4,12 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#2563eb" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="preload" href="assets/css/summary.css?v=20240714" as="style" />
-    <link rel="preload" href="assets/css/animations.css?v=20240714" as="style" />
-    <link rel="preload" href="assets/css/timeline.css?v=20240714" as="style" />
-    <link rel="preload" href="assets/css/kpi-rings.css?v=20240714" as="style" />
-    <link rel="preload" href="assets/css/ui.css?v=20240714" as="style" />
+    <link rel="manifest" data-asset="href" data-href="manifest.webmanifest" />
+    <link rel="preload" data-asset="href" data-href="assets/css/summary.css?v=20240714" as="style" />
+    <link rel="preload" data-asset="href" data-href="assets/css/animations.css?v=20240714" as="style" />
+    <link rel="preload" data-asset="href" data-href="assets/css/timeline.css?v=20240714" as="style" />
+    <link rel="preload" data-asset="href" data-href="assets/css/kpi-rings.css?v=20240714" as="style" />
+    <link rel="preload" data-asset="href" data-href="assets/css/ui.css?v=20240714" as="style" />
     <style>
       :root {
         color-scheme: dark;
@@ -67,13 +67,58 @@
         }
       }
     </style>
-    <link rel="stylesheet" href="assets/css/theme.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="assets/css/summary.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="assets/css/animations.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="assets/css/timeline.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="assets/css/kpi-rings.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="assets/css/ui.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="assets/css/badges.css?v=20240714" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" data-asset="href" data-href="assets/css/theme.css?v=20240714" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" data-asset="href" data-href="assets/css/summary.css?v=20240714" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" data-asset="href" data-href="assets/css/animations.css?v=20240714" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" data-asset="href" data-href="assets/css/timeline.css?v=20240714" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" data-asset="href" data-href="assets/css/kpi-rings.css?v=20240714" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" data-asset="href" data-href="assets/css/ui.css?v=20240714" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" data-asset="href" data-href="assets/css/badges.css?v=20240714" media="print" onload="this.media='all'" />
+    <script>
+      (function () {
+        const ABSOLUTE = /^(?:[a-z]+:)?\/\//i;
+        function ensureTrailingSlash(value) {
+          if (!value) return '/';
+          return value.endsWith('/') ? value : `${value}/`;
+        }
+        function computeBase() {
+          const fromGlobal = typeof window.__HEALTH2099_BASE__ === 'string' ? window.__HEALTH2099_BASE__ : null;
+          if (fromGlobal) return ensureTrailingSlash(fromGlobal);
+          const { pathname } = window.location;
+          const base = pathname.endsWith('/') ? pathname : pathname.replace(/[^/]*$/, '');
+          return ensureTrailingSlash(base);
+        }
+        const basePath = computeBase();
+        function withBase(path) {
+          if (!path || ABSOLUTE.test(path)) return path;
+          if (path.startsWith('/')) return path;
+          return `${basePath}${path.replace(/^\.\//, '')}`;
+        }
+        window.__HEALTH2099_BASE__ = basePath;
+        window.__HEALTH2099_WITH_BASE__ = withBase;
+        function applyAssets() {
+          const nodes = document.querySelectorAll('[data-asset]');
+          nodes.forEach((node) => {
+            const attr = node.getAttribute('data-asset');
+            const original = node.getAttribute(`data-${attr}`);
+            if (!attr || !original) return;
+            const value = withBase(original);
+            if (attr === 'href') {
+              node.setAttribute('href', value);
+            } else if (attr === 'src') {
+              node.setAttribute('src', value);
+            }
+          });
+        }
+        const observer = new MutationObserver(() => applyAssets());
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        document.addEventListener('DOMContentLoaded', () => {
+          applyAssets();
+          observer.disconnect();
+        });
+        applyAssets();
+      })();
+    </script>
     <noscript>
       <link rel="stylesheet" href="assets/css/theme.css?v=20240714" />
       <link rel="stylesheet" href="assets/css/summary.css?v=20240714" />
@@ -159,7 +204,7 @@
     <footer class="summary-footer" role="contentinfo">
       Synced via shared storage · Broadcast ready
     </footer>
-    <script src="./shared/nav-loader.js" defer></script>
-    <script type="module" src="assets/js/summary-page.js?v=20240714" defer></script>
+    <script data-asset="src" data-src="shared/nav-loader.js" defer></script>
+    <script type="module" data-asset="src" data-src="assets/js/summary-page.js?v=20240714" defer></script>
   </body>
 </html>

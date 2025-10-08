@@ -14,14 +14,14 @@ export function initSidebar() {
 
   function render() {
     const targets = SharedStorage.getTargets();
-    waterInput.value = targets.water;
+    waterInput.value = targets.water_ml;
     stepsInput.value = targets.steps;
-    sleepInput.value = targets.sleep;
-    caffeineInput.value = targets.caffeine;
+    sleepInput.value = targets.sleep_min;
+    caffeineInput.value = targets.caffeine_mg;
 
     medsList.innerHTML = '';
-    const meds = Array.isArray(targets.meds) ? targets.meds : [];
-    const takenLogs = SharedStorage.listLogs({ type: 'meds', since: SharedStorage.startOfDayISO(new Date()) });
+    const meds = SharedStorage.getMedsToday();
+    const takenLogs = SharedStorage.listLogs({ type: 'med', since: SharedStorage.startOfDayISO(new Date()) });
 
     meds.forEach((med) => {
       const item = document.createElement('div');
@@ -29,10 +29,10 @@ export function initSidebar() {
       const label = document.createElement('label');
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.checked = takenLogs.some((log) => log.note === med.name);
+      checkbox.checked = med.taken || takenLogs.some((log) => log.note === med.title);
       checkbox.addEventListener('change', () => toggleMed(med, checkbox.checked));
       const span = document.createElement('span');
-      span.textContent = med.name;
+      span.textContent = med.title;
       span.tabIndex = 0;
       span.addEventListener('dblclick', () => editMedName(med));
       span.addEventListener('keydown', (event) => {
@@ -59,32 +59,39 @@ export function initSidebar() {
     addMedButton.addEventListener('click', () => {
       const name = window.prompt('Medication name');
       if (!name) return;
-      const targets = SharedStorage.getTargets();
-      const meds = Array.isArray(targets.meds) ? [...targets.meds] : [];
-      meds.push({ id: crypto.randomUUID(), name });
-      SharedStorage.setTargets({ ...targets, meds });
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      const meds = SharedStorage.getMedsToday();
+      meds.push({ id: createMedId(), title: trimmed, taken: false });
+      SharedStorage.setMedsToday(meds);
     });
   }
 
   render();
   SharedStorage.onChange((payload) => {
-    if (!payload || payload.target === 'targets' || payload.target === 'logs') {
+    if (!payload || payload.target === 'targets' || payload.target === 'logs' || payload.target === 'meds') {
       render();
     }
   });
 }
 
 function saveTargets(inputs) {
-  const [water, steps, sleep, caffeine] = inputs.map((input) => Number(input.value || 0));
-  SharedStorage.setTargets({ water, steps, sleep, caffeine });
+  const [water_ml, steps, sleep_min, caffeine_mg] = inputs.map((input) => Number(input.value || 0));
+  SharedStorage.setTargets({ water_ml, steps, sleep_min, caffeine_mg });
 }
 
 function toggleMed(med, checked) {
   if (checked) {
-    SharedStorage.pushLog('meds', 1, { note: med.name });
+    SharedStorage.updateMedToday(med.id, { taken: true });
+    const todays = SharedStorage.listLogs({ type: 'med', since: SharedStorage.startOfDayISO(new Date()) });
+    const existing = todays.find((log) => log.note === med.title);
+    if (!existing) {
+      SharedStorage.pushLog('med', 1, { note: med.title });
+    }
   } else {
-    const todays = SharedStorage.listLogs({ type: 'meds', since: SharedStorage.startOfDayISO(new Date()) });
-    const targetLog = todays.find((log) => log.note === med.name);
+    SharedStorage.updateMedToday(med.id, { taken: false });
+    const todays = SharedStorage.listLogs({ type: 'med', since: SharedStorage.startOfDayISO(new Date()) });
+    const targetLog = todays.find((log) => log.note === med.title);
     if (targetLog) {
       SharedStorage.removeLog(targetLog.id);
     }
@@ -92,19 +99,20 @@ function toggleMed(med, checked) {
 }
 
 function editMedName(med) {
-  const name = window.prompt('Update medication name', med.name);
+  const name = window.prompt('Update medication name', med.title);
   if (!name) return;
-  const targets = SharedStorage.getTargets();
-  const meds = Array.isArray(targets.meds) ? targets.meds.map((item) => (item.id === med.id ? { ...item, name } : item)) : [];
-  SharedStorage.setTargets({ ...targets, meds });
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  const meds = SharedStorage.getMedsToday().map((item) =>
+    item.id === med.id ? { ...item, title: trimmed } : item,
+  );
+  SharedStorage.setMedsToday(meds);
 }
 
 function removeMed(id) {
-  const targets = SharedStorage.getTargets();
-  const meds = Array.isArray(targets.meds) ? targets.meds.filter((med) => med.id !== id) : [];
-  SharedStorage.setTargets({ ...targets, meds });
+  const meds = SharedStorage.getMedsToday().filter((med) => med.id !== id);
+  SharedStorage.setMedsToday(meds);
 }
-
 
 function debounce(fn, delay) {
   let timer;
@@ -112,4 +120,11 @@ function debounce(fn, delay) {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), delay);
   };
+}
+
+function createMedId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `med_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
 }

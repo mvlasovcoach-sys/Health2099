@@ -9,8 +9,8 @@ export function initDevSeed() {
     const now = new Date();
     for (let d = 0; d < days; d += 1) {
       const dayDate = new Date(now.getTime() - d * 86400000);
-      ['water', 'steps', 'sleep', 'caffeine', 'meds'].forEach((type) => {
-        const count = type === 'meds' ? 1 : 2;
+      ['water', 'steps', 'sleep', 'caffeine', 'med'].forEach((type) => {
+        const count = type === 'med' ? 1 : 2;
         for (let i = 0; i < count; i += 1) {
           const timestamp = new Date(dayDate);
           timestamp.setHours(8 + i * 4, Math.floor(Math.random() * 60), 0, 0);
@@ -23,9 +23,13 @@ export function initDevSeed() {
     });
     SharedStorage.setSettings({
       city: 'Amsterdam',
-      deviceBattery: 82,
-      lastDevicePing: new Date().toISOString(),
+      batteryPct: 82,
+      lastDevicePingISO: new Date().toISOString(),
     });
+    SharedStorage.setMedsToday([
+      { id: 'med_demo_1', title: 'Morning med', taken: true },
+      { id: 'med_demo_2', title: 'Evening med', taken: false },
+    ]);
   });
 }
 
@@ -39,7 +43,7 @@ function valueForType(type) {
       return 360 + Math.floor(Math.random() * 120);
     case 'caffeine':
       return 80 + Math.floor(Math.random() * 60);
-    case 'meds':
+    case 'med':
       return 1;
     default:
       return 0;
@@ -48,7 +52,7 @@ function valueForType(type) {
 
 function noteForType(type) {
   switch (type) {
-    case 'meds':
+    case 'med':
       return 'Daily med';
     case 'water':
       return 'Hydration';

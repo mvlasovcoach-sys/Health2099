@@ -1,20 +1,21 @@
 const STORAGE_KEY = 'health2099-db-v1';
 const CHANNEL_NAME = 'health2099';
+
 const DEFAULT_DB = {
-  version: 1,
+  version: 2,
   logs: [],
   targets: {
-    water: 2500,
+    water_ml: 2000,
     steps: 8000,
-    sleep: 420,
-    caffeine: 240,
-    meds: [],
+    sleep_min: 420,
+    caffeine_mg: 300,
   },
+  meds_today: [],
   settings: {
     tz: 'Europe/Amsterdam',
+    lastDevicePingISO: null,
+    batteryPct: 82,
     city: '',
-    deviceBattery: 82,
-    lastDevicePing: null,
   },
   queue: [],
 };
@@ -41,19 +42,70 @@ function hydrate() {
   } catch (err) {
     console.warn('[sharedStorage] Failed to parse db', err);
   }
-  const next = mergeDeep({}, DEFAULT_DB, parsed || {});
+
+  const migrated = migrateSchema(parsed || {});
+  const next = mergeDeep({}, DEFAULT_DB, migrated);
+
   next.logs = Array.isArray(next.logs)
     ? next.logs
-        .filter((item) => item && item.id && item.createdAt)
+        .filter((item) => item && (item.id || item.createdAt))
         .map(normalizeLog)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     : [];
   next.targets = normalizeTargets(next.targets);
-  next.settings = { ...DEFAULT_DB.settings, ...(next.settings || {}) };
+  next.meds_today = normalizeMeds(next.meds_today);
+  next.settings = normalizeSettings(next.settings);
   next.queue = Array.isArray(next.queue) ? next.queue.filter(Boolean) : [];
+
   db = next;
   persist();
   return next;
+}
+
+function migrateSchema(source) {
+  const draft = { ...source };
+
+  if (draft.targets) {
+    if (typeof draft.targets.water === 'number') {
+      draft.targets.water_ml = draft.targets.water;
+    }
+    if (typeof draft.targets.sleep === 'number') {
+      draft.targets.sleep_min = draft.targets.sleep;
+    }
+    if (typeof draft.targets.caffeine === 'number') {
+      draft.targets.caffeine_mg = draft.targets.caffeine;
+    }
+  }
+
+  if (Array.isArray(draft.targets?.meds) && !Array.isArray(draft.meds_today)) {
+    draft.meds_today = draft.targets.meds.map((med) => ({
+      id: med.id || createId('med'),
+      title: med.name || med.title || 'Medication',
+      timeISO: med.timeISO || med.timeIso || null,
+      taken: Boolean(med.taken),
+    }));
+    delete draft.targets.meds;
+  }
+
+  if (draft.settings) {
+    if (draft.settings.deviceBattery != null && draft.settings.batteryPct == null) {
+      draft.settings.batteryPct = draft.settings.deviceBattery;
+    }
+    if (draft.settings.lastDevicePing && !draft.settings.lastDevicePingISO) {
+      draft.settings.lastDevicePingISO = draft.settings.lastDevicePing;
+    }
+  }
+
+  if (Array.isArray(draft.logs)) {
+    draft.logs = draft.logs.map((log) => {
+      if (log.type === 'meds') {
+        return { ...log, type: 'med' };
+      }
+      return log;
+    });
+  }
+
+  return draft;
 }
 
 function mergeDeep(target, ...sources) {
@@ -95,16 +147,46 @@ function normalizeLog(log) {
 
 function normalizeTargets(targets) {
   const next = { ...DEFAULT_DB.targets, ...(targets || {}) };
-  const ensureNumber = (value, fallback) => {
-    const num = Number(value);
-    return Number.isFinite(num) ? num : fallback;
-  };
-  next.water = ensureNumber(next.water, DEFAULT_DB.targets.water);
+  next.water_ml = ensureNumber(next.water_ml, DEFAULT_DB.targets.water_ml);
   next.steps = ensureNumber(next.steps, DEFAULT_DB.targets.steps);
-  next.sleep = ensureNumber(next.sleep, DEFAULT_DB.targets.sleep);
-  next.caffeine = ensureNumber(next.caffeine, DEFAULT_DB.targets.caffeine);
-  if (!Array.isArray(next.meds)) next.meds = [];
+  next.sleep_min = ensureNumber(next.sleep_min, DEFAULT_DB.targets.sleep_min);
+  next.caffeine_mg = ensureNumber(next.caffeine_mg, DEFAULT_DB.targets.caffeine_mg);
   return next;
+}
+
+function normalizeMeds(meds) {
+  if (!Array.isArray(meds)) return [];
+  return meds
+    .map((med) => ({
+      id: med.id || createId('med'),
+      title: med.title || med.name || 'Medication',
+      timeISO: med.timeISO || med.timeIso || null,
+      taken: Boolean(med.taken),
+    }))
+    .filter((med) => med.id && med.title);
+}
+
+function normalizeSettings(settings) {
+  const next = { ...DEFAULT_DB.settings, ...(settings || {}) };
+  if (next.batteryPct != null) {
+    const battery = Number(next.batteryPct);
+    next.batteryPct = Number.isFinite(battery) ? battery : null;
+  }
+  if (next.lastDevicePingISO) {
+    const ping = new Date(next.lastDevicePingISO);
+    next.lastDevicePingISO = Number.isNaN(ping.getTime()) ? null : ping.toISOString();
+  }
+  if (typeof next.city !== 'string') {
+    next.city = '';
+  } else {
+    next.city = next.city.trim();
+  }
+  return next;
+}
+
+function ensureNumber(value, fallback) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
 }
 
 function inferUnit(type) {
@@ -117,7 +199,7 @@ function inferUnit(type) {
       return 'min';
     case 'caffeine':
       return 'mg';
-    case 'meds':
+    case 'med':
       return 'dose';
     default:
       return '';
@@ -138,6 +220,7 @@ function persist() {
         version: db.version,
         logs: db.logs,
         targets: db.targets,
+        meds_today: db.meds_today,
         settings: db.settings,
         queue: db.queue,
       }),
@@ -195,7 +278,7 @@ function createLog(type, value, options = {}) {
 function pushLog(type, value, options = {}) {
   const log = createLog(type, value, options);
   db.logs = [log, ...db.logs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  db.settings.lastDevicePing = log.createdAt;
+  db.settings.lastDevicePingISO = log.createdAt;
   notify({ target: 'logs', action: 'push', log });
   return log;
 }
@@ -242,8 +325,8 @@ function getTargets() {
 }
 
 function setTargets(nextTargets) {
-  db.targets = normalizeTargets({ ...db.targets, ...nextTargets });
-  notify({ target: 'targets', action: 'set', targets: db.targets });
+  db.targets = normalizeTargets({ ...db.targets, ...(nextTargets || {}) });
+  notify({ target: 'targets', action: 'set', targets: getTargets() });
   return getTargets();
 }
 
@@ -252,9 +335,32 @@ function getSettings() {
 }
 
 function setSettings(partial) {
-  db.settings = { ...db.settings, ...(partial || {}) };
-  notify({ target: 'settings', action: 'set', settings: db.settings });
+  db.settings = normalizeSettings({ ...db.settings, ...(partial || {}) });
+  notify({ target: 'settings', action: 'set', settings: getSettings() });
   return getSettings();
+}
+
+function getMedsToday() {
+  return db.meds_today.map((med) => ({ ...med }));
+}
+
+function setMedsToday(next) {
+  db.meds_today = normalizeMeds(next);
+  notify({ target: 'meds', action: 'set', meds: getMedsToday() });
+  return getMedsToday();
+}
+
+function updateMedToday(id, updates) {
+  let updated;
+  db.meds_today = db.meds_today.map((med) => {
+    if (med.id !== id) return med;
+    updated = { ...med, ...(updates || {}) };
+    return updated;
+  });
+  if (updated) {
+    setMedsToday(db.meds_today);
+  }
+  return updated;
 }
 
 function onChange(listener) {
@@ -306,11 +412,11 @@ function aggregateDay(date = new Date()) {
 
 function aggregateRange(start, end) {
   const result = {
-    water: 0,
+    water_ml: 0,
     steps: 0,
-    sleep: 0,
-    caffeine: 0,
-    meds: 0,
+    sleep_min: 0,
+    caffeine_mg: 0,
+    meds_taken: 0,
   };
   const startTime = start.getTime();
   const endTime = end.getTime();
@@ -319,19 +425,19 @@ function aggregateRange(start, end) {
     if (time < startTime || time > endTime) return;
     switch (log.type) {
       case 'water':
-        result.water += log.value || 0;
+        result.water_ml += log.value || 0;
         break;
       case 'steps':
         result.steps += log.value || 0;
         break;
       case 'sleep':
-        result.sleep += log.value || 0;
+        result.sleep_min += log.value || 0;
         break;
       case 'caffeine':
-        result.caffeine += log.value || 0;
+        result.caffeine_mg += log.value || 0;
         break;
-      case 'meds':
-        result.meds += 1;
+      case 'med':
+        result.meds_taken += 1;
         break;
       default:
         break;
@@ -421,6 +527,9 @@ export const SharedStorage = {
   setTargets,
   getSettings,
   setSettings,
+  getMedsToday,
+  setMedsToday,
+  updateMedToday,
   onChange,
   addQueue,
   flushQueue,
