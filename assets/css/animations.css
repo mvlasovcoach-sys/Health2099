@@ -1,0 +1,40 @@
+.card-hover {
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow);
+}
+
+.card-press:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.goal-pulse {
+  animation: goalPulse 550ms ease-out;
+}
+
+@keyframes goalPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.35);
+  }
+  70% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 18px rgba(96, 165, 250, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-hover,
+  .card-press,
+  .goal-pulse {
+    transition-duration: 0.01ms !important;
+    animation: none !important;
+  }
+}
