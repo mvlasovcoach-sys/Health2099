@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { withBasePath } from '@/lib/base-path';
 
 export type BuildInfo = {
   commit: string;
@@ -35,7 +36,7 @@ export function BuildInfoProvider({ children }: { children: React.ReactNode }) {
 
     async function load() {
       try {
-        const response = await fetch('/version.json', { cache: 'no-store' });
+        const response = await fetch(withBasePath('/version.json'), { cache: 'no-store' });
         if (!response.ok) return;
         const payload = await response.json();
         if (!cancelled) {
