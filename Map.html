@@ -1,13 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="Cache-Control" content="no-store" />
     <title>Map</title>
-    <meta name="theme-color" content="#2563eb" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/shared/styles.css?v=__BUILD_COMMIT_SHORT__" />
+    <link rel="stylesheet" href="./shared/styles.css" />
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -66,8 +63,7 @@
       </div>
     </main>
 
-    <script src="/shared/sw-client.js?v=__BUILD_COMMIT_SHORT__" defer></script>
-    <script src="/shared/nav-loader.js?v=__BUILD_COMMIT_SHORT__" defer></script>
+    <script src="./shared/nav-loader.js" defer></script>
     <script>
       (function () {
         const LS_LOCATIONS = 'health_locations_v1';
