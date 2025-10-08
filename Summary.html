@@ -9,6 +9,7 @@
     <link rel="preload" href="assets/css/animations.css?v=20240714" as="style" />
     <link rel="preload" href="assets/css/timeline.css?v=20240714" as="style" />
     <link rel="preload" href="assets/css/kpi-rings.css?v=20240714" as="style" />
+    <link rel="preload" href="assets/css/ui.css?v=20240714" as="style" />
     <style>
       :root {
         color-scheme: dark;
@@ -71,6 +72,7 @@
     <link rel="stylesheet" href="assets/css/animations.css?v=20240714" media="print" onload="this.media='all'" />
     <link rel="stylesheet" href="assets/css/timeline.css?v=20240714" media="print" onload="this.media='all'" />
     <link rel="stylesheet" href="assets/css/kpi-rings.css?v=20240714" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="assets/css/ui.css?v=20240714" media="print" onload="this.media='all'" />
     <link rel="stylesheet" href="assets/css/badges.css?v=20240714" media="print" onload="this.media='all'" />
     <noscript>
       <link rel="stylesheet" href="assets/css/theme.css?v=20240714" />
@@ -79,6 +81,7 @@
       <link rel="stylesheet" href="assets/css/timeline.css?v=20240714" />
       <link rel="stylesheet" href="assets/css/badges.css?v=20240714" />
       <link rel="stylesheet" href="assets/css/kpi-rings.css?v=20240714" />
+      <link rel="stylesheet" href="assets/css/ui.css?v=20240714" />
     </noscript>
   </head>
   <body class="app-shell" data-page="summary">
@@ -95,17 +98,17 @@
             <p>Log habits in a tap. Offline entries queue automatically.</p>
           </header>
           <div class="quick-actions__grid" id="quick-actions" role="group" aria-label="Quick log actions"></div>
-          <div>
-            <button type="button" id="action-note" class="card-press">Add note</button>
-          </div>
         </section>
         <section class="timeline" aria-labelledby="timeline-heading" role="region">
-          <header>
-            <div>
+          <header class="timeline__header">
+            <div class="timeline__title">
               <h2 id="timeline-heading">Today</h2>
               <p id="timeline-count" class="timeline-meta"></p>
             </div>
-            <button type="button" class="card-press" id="seed-demo">Seed demo data</button>
+            <div class="timeline__controls">
+              <div class="timeline-filters" id="timeline-filters" role="group" aria-label="Timeline range"></div>
+              <button type="button" class="card-press" id="seed-demo">Seed demo data</button>
+            </div>
           </header>
           <div class="timeline-list" id="timeline-list" aria-live="polite"></div>
         </section>
