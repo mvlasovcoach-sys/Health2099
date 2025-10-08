@@ -6,9 +6,24 @@
   <meta name="theme-color" content="#2563eb" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="stylesheet" href="./shared/styles.css" />
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="./shared/vendor/leaflet/leaflet.css" />
-  <script src="./shared/vendor/leaflet/leaflet.js" defer></script>
-  <script src="/Health2099/assets/topbar.bundle.js?v=6" defer></script>
+
+  <!-- Leaflet JS (local first, CDN fallback via onerror); must appear BEFORE any script that uses L -->
+  <script
+    src="./shared/vendor/leaflet/leaflet.js"
+    defer
+    onerror="
+      (function(){
+        var sc=document.createElement('script');
+        sc.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        sc.defer=true; document.head.appendChild(sc);
+        var lc=document.createElement('link'); lc.rel='stylesheet';
+        lc.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(lc);
+      })();
+    "
+  ></script>
 
   </head>
   <body class="app-shell" data-page="map">
@@ -47,7 +62,7 @@
         </div>
 
         <div class="map-layout">
-          <div id="map" class="map" aria-label="Locations map"></div>
+          <div id="map" class="map" aria-label="Locations map" style="height:520px;"></div>
           <aside class="panel" aria-label="Snapshot history">
             <div class="muted" style="margin-bottom: 0.5rem;">History</div>
             <ul id="list" class="list"></ul>
@@ -59,6 +74,7 @@
     <script src="./shared/storage.js"></script>
     <script src="./shared/nav-loader.js"></script>
     <script>window.addEventListener('load',()=>console.log('TopBar type:', typeof window.H2099TopBar));</script>
+    <script>window.addEventListener('load',()=>console.log('Leaflet ready:', !!window.L));</script>
     <script>
       (function () {
         const LS_LOCATIONS = 'health_locations_v1';

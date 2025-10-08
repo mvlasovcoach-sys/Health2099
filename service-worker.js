@@ -1,4 +1,4 @@
-const CACHE_NAME = 'health2099-cache-v6-restore-mapfix';
+const CACHE_NAME = 'health2099-cache-v6-restore-mapfix-v8';
 const APP_SHELL = [
   './',
   './pocket_health_link.html',
@@ -18,7 +18,13 @@ const APP_SHELL = [
 ];
 
 const BYPASS_HOSTS = ['tile.openstreetmap.org', 'unpkg.com'];
-const BYPASS_CACHE = [/assets\/topbar\.bundle\.js/];
+const BYPASS_CACHE = [
+  /assets\/topbar\.bundle\.js/,
+  /shared\/vendor\/leaflet\/leaflet\.js/,
+  /shared\/vendor\/leaflet\/leaflet\.css/,
+  /unpkg\.com\/leaflet/,
+  /tile\.openstreetmap\.org/
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -42,7 +48,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
   const shouldBypass = BYPASS_HOSTS.some((host) => url.hostname === host || url.hostname.endsWith(`.${host}`));
-  const shouldBypassCache = BYPASS_CACHE.some((pattern) => pattern.test(url.pathname));
+  const shouldBypassCache = BYPASS_CACHE.some((pattern) => pattern.test(event.request.url));
 
   if (shouldBypass) {
     return;
