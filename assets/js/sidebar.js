@@ -21,7 +21,7 @@ export function initSidebar() {
 
     medsList.innerHTML = '';
     const meds = Array.isArray(targets.meds) ? targets.meds : [];
-    const takenLogs = SharedStorage.listLogs({ type: 'meds', since: startOfDayISO(new Date()) });
+    const takenLogs = SharedStorage.listLogs({ type: 'meds', since: SharedStorage.startOfDayISO(new Date()) });
 
     meds.forEach((med) => {
       const item = document.createElement('div');
@@ -83,7 +83,7 @@ function toggleMed(med, checked) {
   if (checked) {
     SharedStorage.pushLog('meds', 1, { note: med.name });
   } else {
-    const todays = SharedStorage.listLogs({ type: 'meds', since: startOfDayISO(new Date()) });
+    const todays = SharedStorage.listLogs({ type: 'meds', since: SharedStorage.startOfDayISO(new Date()) });
     const targetLog = todays.find((log) => log.note === med.name);
     if (targetLog) {
       SharedStorage.removeLog(targetLog.id);
@@ -105,11 +105,6 @@ function removeMed(id) {
   SharedStorage.setTargets({ ...targets, meds });
 }
 
-function startOfDayISO(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
 
 function debounce(fn, delay) {
   let timer;

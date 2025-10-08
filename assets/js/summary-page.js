@@ -1,5 +1,6 @@
 import { initHeader } from './summary-header.js';
 import { initKpi } from './kpi.js';
+import { initHeroKpi } from './hero-kpi.js';
 import { initQuickActions } from './quick-actions.js';
 import { initTimeline } from './timeline.js';
 import { initInsights } from './insights.js';
@@ -18,6 +19,7 @@ function ready(callback) {
 
 ready(() => {
   initHeader();
+  initHeroKpi();
   initKpi();
   initQuickActions();
   initTimeline();

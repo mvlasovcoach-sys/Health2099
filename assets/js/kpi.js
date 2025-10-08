@@ -50,7 +50,7 @@ export function initKpi() {
     const targets = SharedStorage.getTargets();
     const today = SharedStorage.aggregateDay(new Date());
     const medsTarget = Array.isArray(targets.meds) ? targets.meds.length : 0;
-    const medsTaken = SharedStorage.listLogs({ type: 'meds', since: startOfDayISO(new Date()) }).length;
+    const medsTaken = SharedStorage.listLogs({ type: 'meds', since: SharedStorage.startOfDayISO(new Date()) }).length;
     const context = { targetCount: medsTarget, medsTaken, missed: medsTarget > medsTaken };
 
     grid.innerHTML = '';
@@ -128,8 +128,3 @@ function getTargetValue(id, targets, context) {
   }
 }
 
-function startOfDayISO(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
