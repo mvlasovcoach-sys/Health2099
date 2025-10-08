@@ -1,4 +1,4 @@
-const CACHE_NAME = 'health2099-cache-v1';
+const CACHE_NAME = 'health2099-cache-v6';
 const APP_SHELL = [
   './',
   './pocket_health_link.html',
@@ -18,6 +18,7 @@ const APP_SHELL = [
 ];
 
 const BYPASS_HOSTS = ['tile.openstreetmap.org', 'unpkg.com'];
+const BYPASS_CACHE = [/assets\/topbar\.bundle\.js/];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -41,8 +42,14 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
   const shouldBypass = BYPASS_HOSTS.some((host) => url.hostname === host || url.hostname.endsWith(`.${host}`));
+  const shouldBypassCache = BYPASS_CACHE.some((pattern) => pattern.test(url.pathname));
 
   if (shouldBypass) {
+    return;
+  }
+
+  if (shouldBypassCache) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
