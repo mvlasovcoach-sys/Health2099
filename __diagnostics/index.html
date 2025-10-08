@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <title>Diagnostics</title>
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="/shared/styles.css?v=__BUILD_COMMIT_SHORT__" />
+  </head>
+  <body class="app-shell" data-page="diagnostics">
+    <div data-include="nav"></div>
+    <main class="app-main">
+      <div class="container flow diagnostics" data-diagnostics-root>
+        <header class="page-header">
+          <div class="page-header__content">
+            <span class="page-header__eyebrow">System</span>
+            <h1>Diagnostics</h1>
+            <p>Route manifest and build metadata for deployment verification.</p>
+          </div>
+        </header>
+
+        <section class="card">
+          <h2>Build</h2>
+          <dl class="diagnostics__list" data-build-info>
+            <div>
+              <dt>Commit</dt>
+              <dd>Loading…</dd>
+            </div>
+            <div>
+              <dt>Built</dt>
+              <dd>Loading…</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="card">
+          <h2>Routes</h2>
+          <div data-routes>Loading routes…</div>
+        </section>
+      </div>
+    </main>
+
+    <script src="/shared/sw-client.js?v=__BUILD_COMMIT_SHORT__" defer></script>
+    <script src="/shared/storage.js?v=__BUILD_COMMIT_SHORT__"></script>
+    <script src="/shared/nav-loader.js?v=__BUILD_COMMIT_SHORT__" defer></script>
+    <script src="/scripts/diagnostics.js?v=__BUILD_COMMIT_SHORT__" defer></script>
+  </body>
+</html>

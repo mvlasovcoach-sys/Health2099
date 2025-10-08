@@ -43,6 +43,7 @@ const htmlFiles = [
   'Summary.html',
   'pocket_health_link.html',
   path.join('health-cabinet', 'index.html'),
+  path.join('__diagnostics', 'index.html'),
 ];
 
 const assetPaths = [
@@ -52,6 +53,7 @@ const assetPaths = [
   '/shared/nav-loader.js',
   '/scripts/diary.js',
   '/health/health-cabinet-page.js',
+  '/scripts/diagnostics.js',
 ];
 
 for (const relative of htmlFiles) {
@@ -66,6 +68,7 @@ for (const relative of htmlFiles) {
 
 await updateSwClient();
 await updateServiceWorker();
+await updateRoutesManifest();
 
 console.log(`Generated version metadata for ${commitShort} at ${builtAt}`);
 
@@ -84,6 +87,93 @@ async function updateServiceWorker() {
   let content = await fs.readFile(filePath, 'utf8');
   content = content.replace(/const BUILD_VERSION = '[^']*';/, `const BUILD_VERSION = '${commitShort}';`);
   await fs.writeFile(filePath, content, 'utf8');
+}
+
+async function updateRoutesManifest() {
+  const routes = await collectRoutes();
+  const payload = JSON.stringify(
+    {
+      generatedAt: builtAt,
+      commit,
+      commitShort,
+      routes,
+    },
+    null,
+    2,
+  );
+  await fs.mkdir(path.join(ROOT_DIR, 'public'), { recursive: true });
+  await fs.writeFile(path.join(ROOT_DIR, 'routes.json'), `${payload}\n`, 'utf8');
+  await fs.writeFile(path.join(ROOT_DIR, 'public', 'routes.json'), `${payload}\n`, 'utf8');
+}
+
+async function collectRoutes() {
+  const results = [];
+  await walk('.');
+  return results.sort((a, b) => a.path.localeCompare(b.path));
+
+  async function walk(relativeDir) {
+    const absolute = path.join(ROOT_DIR, relativeDir);
+    const entries = await fs.readdir(absolute, { withFileTypes: true });
+    for (const entry of entries) {
+      const name = entry.name;
+      if (shouldSkip(name)) continue;
+      const relativePath = path.join(relativeDir, name);
+      if (entry.isDirectory()) {
+        if (shouldSkipDirectory(name)) continue;
+        await walk(relativePath);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      if (!name.toLowerCase().endsWith('.html')) continue;
+      const normalized = normalizePath(relativePath);
+      const routePath = toRoute(normalized);
+      if (!routePath) continue;
+      const filePath = path.join(ROOT_DIR, normalized);
+      let title = '';
+      try {
+        const content = await fs.readFile(filePath, 'utf8');
+        const match = content.match(/<title>([^<]*)<\/title>/i);
+        title = match ? match[1].trim() : '';
+      } catch (error) {
+        console.warn('Failed to read title for route', normalized, error);
+      }
+      results.push({ path: routePath, file: normalized, title });
+    }
+  }
+}
+
+function shouldSkip(name) {
+  return name === '.DS_Store' || name === 'Thumbs.db';
+}
+
+function shouldSkipDirectory(name) {
+  return (
+    name.startsWith('.') ||
+    name === 'node_modules' ||
+    name === 'android' ||
+    name === 'assets' ||
+    name === 'docs' ||
+    name === 'includes' ||
+    name === 'components' ||
+    name === 'health' ||
+    name === 'shared' ||
+    name === 'scripts' ||
+    name === 'stores' ||
+    name === 'public'
+  );
+}
+
+function normalizePath(relativePath) {
+  return relativePath.replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
+function toRoute(filePath) {
+  if (!filePath) return null;
+  if (filePath === 'index.html') return '/';
+  if (filePath.endsWith('/index.html')) {
+    return `/${filePath.slice(0, -'index.html'.length)}`;
+  }
+  return `/${filePath}`;
 }
 
 function escapeRegExp(value) {

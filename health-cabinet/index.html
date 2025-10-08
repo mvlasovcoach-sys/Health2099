@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-store" />
     <title>Health cabinet</title>
     <meta name="theme-color" content="#2563eb" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -12,10 +13,16 @@
     <div data-include="nav"></div>
     <main class="app-main">
       <div class="container flow health-dashboard" data-health-dashboard>
-        <header class="page-header">
-          <span class="page-header__eyebrow">Health cabinet</span>
-          <h1>Dashboard overview</h1>
-          <p>Live snapshot of wellness metrics powered by personal diary data and wearables.</p>
+        <header class="page-header health-dashboard__hero">
+          <div class="page-header__content">
+            <span class="page-header__eyebrow">Health cabinet</span>
+            <h1>Health cabinet</h1>
+            <p>Live snapshot of wellness metrics powered by personal diary data and wearables.</p>
+          </div>
+          <div class="page-header__meta">
+            <span class="badge page-header__badge" data-device-status>Device: Offline 10+ min · Battery 82% · ●○○ manual</span>
+            <span class="badge page-header__badge page-header__badge--version" data-version-badge title="Build version">v:dev</span>
+          </div>
         </header>
 
         <section class="health-dashboard__top" data-section="top"></section>
