@@ -1,4 +1,4 @@
-const CACHE_NAME = 'health2099-cache-v6-restore';
+const CACHE_NAME = 'health2099-cache-v6-restore-mapfix';
 const APP_SHELL = [
   './',
   './pocket_health_link.html',
