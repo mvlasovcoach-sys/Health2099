@@ -4,34 +4,18 @@
   "private": true,
   "description": "Diary, summary, and map snapshots with offline support.",
   "scripts": {
-    "dev": "next dev",
-    "build": "npm run generate:version && next build",
-    "start": "next start",
-    "lint": "next lint",
-    "generate:version": "node scripts/generate-version.mjs",
+    "start": "npx serve .",
+    "build": "echo 'Static build only'",
     "cap:init": "npx cap init Health2099 com.health2099.app --web-dir . --npm-client npm",
     "cap:copy": "npx cap copy",
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android"
   },
   "dependencies": {
-    "@capacitor/core": "^5.7.4",
-    "clsx": "^2.1.1",
-    "next": "^14.2.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "@capacitor/core": "^5.7.4"
   },
   "devDependencies": {
-    "@capacitor/android": "^5.7.4",
     "@capacitor/cli": "^5.7.4",
-    "@types/node": "^20.12.7",
-    "@types/react": "^18.2.79",
-    "@types/react-dom": "^18.2.25",
-    "autoprefixer": "^10.4.17",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.5",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.4",
-    "typescript": "^5.4.5"
+    "@capacitor/android": "^5.7.4"
   }
 }

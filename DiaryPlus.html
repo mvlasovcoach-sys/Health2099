@@ -3,11 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="Cache-Control" content="no-store" />
     <title>Diary Plus</title>
     <meta name="theme-color" content="#2563eb" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/shared/styles.css?v=__BUILD_COMMIT_SHORT__" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./shared/styles.css" />
   </head>
   <body class="app-shell" data-page="diary">
     <div data-include="nav"></div>
@@ -80,10 +79,8 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="/shared/sw-client.js?v=__BUILD_COMMIT_SHORT__" defer></script>
-    <script src="/shared/storage.js?v=__BUILD_COMMIT_SHORT__"></script>
-    <script src="/shared/nav-loader.js?v=__BUILD_COMMIT_SHORT__" defer></script>
-    <script src="/scripts/diary.js?v=__BUILD_COMMIT_SHORT__" type="module"></script>
+    <script src="./shared/storage.js"></script>
+    <script src="./shared/nav-loader.js"></script>
     <script>
       (function () {
         const form = document.getElementById('event-form');
@@ -275,6 +272,13 @@
 
         refresh();
 
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./service-worker.js').catch((err) => {
+              console.warn('Service worker registration failed', err);
+            });
+          });
+        }
       })();
     </script>
   </body>

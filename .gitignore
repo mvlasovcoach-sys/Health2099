@@ -1,7 +1,3 @@
 node_modules/
 .DS_Store
 npm-debug.log*
-public/version.json
-public/routes.json
-version.json
-legacy/health_old/

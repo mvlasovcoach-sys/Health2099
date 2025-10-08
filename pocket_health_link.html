@@ -3,11 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="Cache-Control" content="no-store" />
     <title>Health2099 Pocket Links</title>
     <meta name="theme-color" content="#2563eb" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="/shared/styles.css?v=__BUILD_COMMIT_SHORT__" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./shared/styles.css" />
   </head>
   <body class="app-shell" data-page="links">
     <div data-include="nav"></div>
@@ -17,28 +16,31 @@
           <article class="link-card">
             <h1>Diary</h1>
             <p>Log hydration, sleep, movement, and daily notes.</p>
-            <a href="/DiaryPlus.html" class="button">Open diary</a>
+            <a href="./DiaryPlus.html" class="button">Open diary</a>
           </article>
           <article class="link-card">
             <h1>Summary</h1>
             <p>Check aggregated stats and quick actions.</p>
-            <a href="/Summary.html" class="button secondary">Open summary</a>
+            <a href="./Summary.html" class="button secondary">Open summary</a>
           </article>
           <article class="link-card">
             <h1>Map</h1>
             <p>Capture location snapshots and revisit your movement history.</p>
-            <a href="/Map.html" class="button">Open map</a>
-          </article>
-          <article class="link-card">
-            <h1>Health cabinet</h1>
-            <p>Explore the full dashboard with live gauges, notes, and device signals.</p>
-            <a href="/health-cabinet/" class="button ghost">Open health cabinet</a>
+            <a href="./Map.html" class="button">Open map</a>
           </article>
         </div>
       </div>
     </main>
-    <script src="/shared/sw-client.js?v=__BUILD_COMMIT_SHORT__" defer></script>
-    <script src="/shared/storage.js?v=__BUILD_COMMIT_SHORT__"></script>
-    <script src="/shared/nav-loader.js?v=__BUILD_COMMIT_SHORT__" defer></script>
+    <script src="./shared/storage.js"></script>
+    <script src="./shared/nav-loader.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js').catch((err) => {
+            console.warn('Service worker registration failed', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
