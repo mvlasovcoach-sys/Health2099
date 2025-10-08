@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Health cabinet</title>
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./shared/styles.css" />
+  </head>
+  <body class="app-shell" data-page="health">
+    <div data-include="nav"></div>
+    <main class="app-main">
+      <div class="container flow health-dashboard" data-health-dashboard>
+        <header class="page-header">
+          <span class="page-header__eyebrow">Health cabinet</span>
+          <h1>Dashboard overview</h1>
+          <p>Live snapshot of wellness metrics powered by personal diary data and wearables.</p>
+        </header>
+
+        <section class="health-dashboard__top" data-section="top"></section>
+        <section class="health-dashboard__kpi" data-section="kpi"></section>
+        <section class="health-dashboard__rings" data-section="rings"></section>
+        <section class="health-dashboard__facts" data-section="facts"></section>
+        <section class="health-dashboard__notes" data-section="notes"></section>
+      </div>
+    </main>
+
+    <script src="./shared/storage.js"></script>
+    <script src="./shared/nav-loader.js"></script>
+    <script type="module" src="./health/health-cabinet-page.js"></script>
+  </body>
+</html>
