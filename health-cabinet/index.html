@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Health cabinet</title>
     <meta name="theme-color" content="#2563eb" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./shared/styles.css" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="/shared/styles.css?v=__BUILD_COMMIT_SHORT__" />
   </head>
   <body class="app-shell" data-page="health">
     <div data-include="nav"></div>
@@ -23,11 +23,17 @@
         <section class="health-dashboard__rings" data-section="rings"></section>
         <section class="health-dashboard__facts" data-section="facts"></section>
         <section class="health-dashboard__notes" data-section="notes"></section>
+        <section class="card card--settings" data-section="settings">
+          <h2>Cache controls</h2>
+          <p>Clear offline data and fetch the newest build if something looks outdated.</p>
+          <button type="button" class="button ghost" data-action="reset-cache">Reset cache</button>
+        </section>
       </div>
     </main>
 
-    <script src="./shared/storage.js"></script>
-    <script src="./shared/nav-loader.js"></script>
-    <script type="module" src="./health/health-cabinet-page.js"></script>
+    <script src="/shared/sw-client.js?v=__BUILD_COMMIT_SHORT__" defer></script>
+    <script src="/shared/storage.js?v=__BUILD_COMMIT_SHORT__"></script>
+    <script src="/shared/nav-loader.js?v=__BUILD_COMMIT_SHORT__" defer></script>
+    <script type="module" src="/health/health-cabinet-page.js?v=__BUILD_COMMIT_SHORT__"></script>
   </body>
 </html>
