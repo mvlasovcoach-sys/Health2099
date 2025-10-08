@@ -1,660 +1,327 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Map snapshots</title>
-    <meta name="theme-color" content="#2563eb" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-o9N1j7kGStpBlXnKzHf0C6YxM0tZQYVI0eCFj0zPmL0="
-      crossorigin="anonymous"
-      onerror="this.onerror=null;this.href='./shared/vendor/leaflet/leaflet.css';"
-    />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="./shared/styles.css" />
-    <style>
-      body {
-        background: #0f172a;
-      }
-      .app-shell {
-        background-image: none;
-        background: radial-gradient(circle at top, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.9));
-      }
-      .map {
-        width: 100%;
-        min-height: 420px;
-        height: 60vh;
-        border-radius: 16px;
-        overflow: hidden;
-      }
-    </style>
-  </head>
-  <body class="app-shell">
-    <div data-include="nav"></div>
-    <main class="app-main">
-      <div class="container flow">
-        <header class="page-header">
-          <span class="page-header__eyebrow">Map</span>
-          <h1>Location snapshots</h1>
-          <p>Capture manual or device-based locations to build a private map of your wellbeing journey. Everything stays offline and stored locally.</p>
-          <span class="badge">Local only</span>
-        </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Map</title>
 
-        <div class="map-layout">
-          <aside class="map-sidebar">
-            <section class="map-card">
-              <h2 style="margin:0; font-size:1.1rem; color:var(--color-heading);">Controls</h2>
-              <div class="map-toolbar">
-                <button type="button" id="my-location">My location</button>
-                <button type="button" id="snapshot">Snapshot</button>
-                <button type="button" id="date-button" class="secondary">Date ⌄</button>
-                <button type="button" class="secondary map-mode" id="show-day" data-mode="day" aria-pressed="true">Day</button>
-                <button type="button" class="secondary map-mode" id="show-week" data-mode="week" aria-pressed="false">Week</button>
-                <button type="button" class="secondary map-mode" id="show-month" data-mode="month" aria-pressed="false">Month</button>
-                <label for="search-note" class="visually-hidden">Search by note</label>
-                <input type="search" id="search-note" placeholder="Search by note" autocomplete="off" />
-                <span class="map-toolbar__spacer" aria-hidden="true"></span>
-                <button type="button" class="secondary" id="export-map">Export JSON</button>
-                <button type="button" class="secondary" id="import-map">Import JSON</button>
-              </div>
-              <input type="date" id="date-input" class="visually-hidden" />
-              <input type="file" id="import-file" accept="application/json" class="visually-hidden" />
-              <p class="map-selected-range" id="range-label"></p>
-            </section>
+  <!-- ваш общий стиль (можно убрать, если нет) -->
+  <link rel="stylesheet" href="./shared/styles.css" />
 
-            <section class="map-card">
-              <div class="map-calendar" aria-label="Snapshot calendar">
-                <div class="map-calendar__header">
-                  <button type="button" class="ghost" id="calendar-prev" aria-label="Previous month">‹</button>
-                  <div class="map-calendar__month" id="calendar-month"></div>
-                  <button type="button" class="ghost" id="calendar-next" aria-label="Next month">›</button>
-                </div>
-                <div class="map-calendar__grid map-calendar__grid--labels" aria-hidden="true"></div>
-                <div class="map-calendar__grid" id="calendar-grid" role="grid" aria-labelledby="calendar-month"></div>
-              </div>
-              <h2 style="margin:0; font-size:1.1rem; color:var(--color-heading);">History</h2>
-              <div id="history-count" class="tag">0 snapshots</div>
-              <div id="history-list" class="map-list" aria-live="polite"></div>
-              <div class="empty-state" id="history-empty" style="display:none;">
-                <p style="margin:0 0 0.75rem;" data-empty-primary>No snapshots yet for this range.</p>
-                <p style="margin:0; font-size:0.85rem;">Tip: enable location on HTTPS or use localhost for device snapshots. Otherwise, capture from the map center.</p>
-              </div>
-            </section>
-          </aside>
+  <!-- Leaflet -->
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-          <section class="map-panel">
-            <div id="map" class="map"></div>
-          </section>
-        </div>
-      </div>
-    </main>
+  <style>
+    body { margin:0; padding:16px; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin:0 0 .75rem 0; }
+    .toolbar input[type="date"]{ padding:.5rem .6rem; border:1px solid #e2e8f0; border-radius:.6rem; }
+    .btn { padding:.55rem .8rem; border-radius:.6rem; border:1px solid #cbd5e1; cursor:pointer; background:#fff; }
+    .btn.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    #map { width:100%; min-height:420px; height:62vh; border-radius:16px; }
+    .layout { display:grid; grid-template-columns: 1fr 340px; gap:1rem; }
+    @media (max-width: 980px){ .layout { grid-template-columns: 1fr; } #map{ height:56vh; } }
+    .panel { border:1px solid #e5e7eb; border-radius:14px; padding:.75rem; background:#fff; }
+    .list { max-height:60vh; overflow:auto; margin:0; padding:0; list-style:none; }
+    .item { border-bottom:1px solid #f1f5f9; padding:.6rem .3rem; display:flex; gap:.5rem; align-items:center; }
+    .item:last-child{ border-bottom:none; }
+    .item button { margin-left:auto; }
+    .muted { color:#64748b; font-size:.9rem; }
+    .search { width:100%; padding:.5rem .6rem; border:1px solid #e2e8f0; border-radius:.6rem; }
+  </style>
+</head>
+<body>
+  <h1 style="margin:0 0 12px 0;">Location snapshots</h1>
 
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <!-- панель управления -->
+  <div class="toolbar">
+    <button id="btnLocate" class="btn">My location</button>
+    <button id="btnSnap" class="btn primary">Snapshot</button>
 
-    <script src="./shared/storage.js"></script>
-    <script src="./shared/nav-loader.js"></script>
-    <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-o9N1j7kGStpBlXnKzHf0C6YxM0tZQYVI0eCFj0zPmL0="
-      crossorigin="anonymous"
-      onerror="this.onerror=null;this.remove();var s=document.createElement('script');s.src='./shared/vendor/leaflet/leaflet.js';document.head.appendChild(s);"
-    ></script>
-    <script>
-      if (typeof window.L === 'undefined') {
-        document.write('<script src="./shared/vendor/leaflet/leaflet.js"><\/script>');
-      }
-    </script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script>
-      (function () {
-        const toast = document.getElementById('toast');
-        const myLocationBtn = document.getElementById('my-location');
-        const snapshotBtn = document.getElementById('snapshot');
-        const dateButton = document.getElementById('date-button');
-        const dateInput = document.getElementById('date-input');
-        const modeButtons = Array.from(document.querySelectorAll('.map-mode'));
-        const searchInput = document.getElementById('search-note');
-        const historyList = document.getElementById('history-list');
-        const historyCount = document.getElementById('history-count');
-        const historyEmpty = document.getElementById('history-empty');
-        const historyEmptyPrimary = historyEmpty ? historyEmpty.querySelector('[data-empty-primary]') : null;
-        const rangeLabel = document.getElementById('range-label');
-        const exportBtn = document.getElementById('export-map');
-        const importBtn = document.getElementById('import-map');
-        const importFile = document.getElementById('import-file');
-        const calendarPrev = document.getElementById('calendar-prev');
-        const calendarNext = document.getElementById('calendar-next');
-        const calendarMonth = document.getElementById('calendar-month');
-        const calendarGrid = document.getElementById('calendar-grid');
-        const calendarLabels = document.querySelector('.map-calendar__grid--labels');
+    <input id="inpDate" type="date"/>
+    <button class="btn" data-scope="day">Day</button>
+    <button class="btn" data-scope="week">Week</button>
+    <button class="btn" data-scope="month">Month</button>
 
-        const DEFAULT_VIEW = [37.773972, -122.431297];
-        const state = {
-          mode: 'day',
-          anchor: new Date(),
-          search: '',
-        };
+    <input id="inpSearch" class="search" placeholder="Search by note" style="flex:1 1 220px; max-width:420px;">
+    <button id="btnExport" class="btn">Export JSON</button>
+    <button id="btnImport" class="btn">Import JSON</button>
+    <input id="fileImport" type="file" accept="application/json" style="display:none;">
+  </div>
 
-        const map = L.map('map', { zoomControl: true });
-        map.setView(DEFAULT_VIEW, 4);
+  <div class="layout">
+    <div id="map"></div>
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors',
-          maxZoom: 19,
-        }).addTo(map);
+    <div class="panel">
+      <div class="muted" style="margin-bottom:.5rem;">History</div>
+      <ul id="list" class="list"></ul>
+    </div>
+  </div>
 
-        let markerLayer = L.layerGroup().addTo(map);
-        let markerIndex = new Map();
+  <script>
+  // ===== Local storage API for locations =====
+  const LS_LOCATIONS = 'health_locations_v1';
+  const nowIso = () => new Date().toISOString();
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID() :
+                     'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{
+                        const r=Math.random()*16|0, v=c==='x'?r:(r&0x3|0x8); return v.toString(16);
+                     }));
 
-        renderCalendarLabels();
-        refresh();
-        requestAnimationFrame(() => {
-          map.invalidateSize();
-        });
+  function loadLocations(){
+    try { return JSON.parse(localStorage.getItem(LS_LOCATIONS) || '[]'); }
+    catch(e){ return []; }
+  }
+  function saveLocations(arr){
+    localStorage.setItem(LS_LOCATIONS, JSON.stringify(arr));
+    // кросс-синк
+    window.dispatchEvent(new CustomEvent('health:changed'));
+  }
+  function addLocation(loc){
+    const arr = loadLocations();
+    const item = { id: uuid(), note:'', source:'device', created_at: nowIso(), updated_at: nowIso(), ...loc };
+    arr.push(item); saveLocations(arr); return item;
+  }
+  function updateLocation(id, patch){
+    const arr = loadLocations();
+    const i = arr.findIndex(x=>x.id===id);
+    if(i>=0){ arr[i] = { ...arr[i], ...patch, updated_at: nowIso() }; saveLocations(arr); }
+  }
+  function deleteLocation(id){
+    const arr = loadLocations().filter(x=>x.id!==id); saveLocations(arr);
+  }
 
-        function renderCalendarLabels() {
-          if (!calendarLabels) return;
-          const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-          calendarLabels.innerHTML = '';
-          labels.forEach((label) => {
-            const cell = document.createElement('div');
-            cell.className = 'map-calendar__label';
-            cell.textContent = label;
-            calendarLabels.appendChild(cell);
-          });
-        }
+  // ===== date helpers =====
+  function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+  function endOfDay(d){ const x=new Date(d); x.setHours(23,59,59,999); return x; }
+  function startOfWeek(d){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(0,0,0,0); return x; }
+  function endOfWeek(d){ const x=startOfWeek(d); x.setDate(x.getDate()+6); x.setHours(23,59,59,999); return x; }
+  function startOfMonth(d){ const x=new Date(d.getFullYear(), d.getMonth(), 1); x.setHours(0,0,0,0); return x; }
+  function endOfMonth(d){ const x=new Date(d.getFullYear(), d.getMonth()+1, 0); x.setHours(23,59,59,999); return x; }
 
-        function toInputValue(value) {
-          const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
-          if (Number.isNaN(date.getTime())) return '';
-          const offset = date.getTimezoneOffset();
-          const local = new Date(date.getTime() - offset * 60000);
-          return local.toISOString().slice(0, 10);
-        }
+  // ===== Map =====
+  let map, markersLayer;
+  let scope = 'day';
+  let anchor = new Date();
 
-        function fromInputValue(value) {
-          if (!value) return new Date();
-          const parts = value.split('-').map(Number);
-          if (parts.length === 3 && parts.every((part) => Number.isFinite(part))) {
-            return new Date(parts[0], parts[1] - 1, parts[2]);
-          }
-          const parsed = new Date(value);
-          return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-        }
+  const inpDate = document.getElementById('inpDate');
+  inpDate.valueAsDate = anchor;
 
-        function ensureDate(value) {
-          if (value instanceof Date) {
-            return Number.isNaN(value.getTime()) ? new Date() : new Date(value.getTime());
-          }
-          return fromInputValue(String(value));
-        }
+  function initMap(){
+    // начальный центр — либо последняя точка, либо Амстердам
+    const last = loadLocations().slice(-1)[0];
+    const center = last ? [last.lat, last.lng] : [52.37, 4.89];
+    map = L.map('map').setView(center, last ? 13 : 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '© OpenStreetMap'
+    }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+    setTimeout(()=>map.invalidateSize(), 0);
+  }
 
-        function showToast(message) {
-          toast.textContent = message;
-          toast.classList.add('visible');
-          setTimeout(() => toast.classList.remove('visible'), 2400);
-        }
+  function rangeForScope(sc, d){
+    if(sc==='day') return [startOfDay(d), endOfDay(d)];
+    if(sc==='week') return [startOfWeek(d), endOfWeek(d)];
+    return [startOfMonth(d), endOfMonth(d)];
+  }
 
-        function refresh() {
-          const anchor = ensureDate(state.anchor);
-          state.anchor = anchor;
-          dateInput.value = toInputValue(anchor);
-          updateModeButtons();
-          updateDateButton(anchor);
-          const allLocations = StorageAPI.loadLocations();
-          const { start, end } = resolveRange(state.mode, anchor);
-          const searchTerm = (state.search || '').trim().toLowerCase();
-          const visibleLocations = filterByRange(allLocations, start, end)
-            .filter((location) => {
-              if (!searchTerm) return true;
-              return (location.note || '').toLowerCase().includes(searchTerm);
-            })
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-          if (searchInput) {
-            searchInput.value = state.search;
-          }
-          renderMarkers(visibleLocations);
-          renderList(visibleLocations);
-          renderCalendar(allLocations);
-          updateRangeLabel(anchor, visibleLocations.length);
-          map.invalidateSize();
-        }
+  function render(){
+    markersLayer.clearLayers();
+    const [a,b] = rangeForScope(scope, anchor);
+    const q = (document.getElementById('inpSearch').value || '').toLowerCase().trim();
 
-        function updateModeButtons() {
-          modeButtons.forEach((button) => {
-            const { mode } = button.dataset;
-            const isActive = mode === state.mode;
-            button.setAttribute('aria-pressed', String(isActive));
-            button.classList.toggle('is-active', isActive);
-          });
-        }
+    let arr = loadLocations().filter(x=>{
+      const t = new Date(x.created_at).getTime();
+      return t>=a.getTime() && t<=b.getTime();
+    });
+    if(q) arr = arr.filter(x => (x.note||'').toLowerCase().includes(q));
 
-        function updateDateButton(anchor) {
-          const label = anchor.toLocaleDateString(undefined, {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-          });
-          dateButton.setAttribute('aria-label', `Select date (currently ${label})`);
-        }
+    // markers
+    arr.forEach(x=>{
+      const m = L.marker([x.lat, x.lng]).addTo(markersLayer);
+      const when = new Date(x.created_at).toLocaleString();
+      m.bindPopup(`<b>${when}</b><br>accuracy: ${x.accuracy_m??'—'} m<br>${(x.note||'')}`);
+      m.on('click', ()=> m.openPopup());
+    });
 
-        function resolveRange(mode, anchor) {
-          if (mode === 'week') {
-            return { start: startOfWeek(anchor), end: endOfWeek(anchor) };
-          }
-          if (mode === 'month') {
-            return { start: startOfMonth(anchor), end: endOfMonth(anchor) };
-          }
-          return { start: startOfDay(anchor), end: endOfDay(anchor) };
-        }
+    // list
+    const ul = document.getElementById('list');
+    ul.innerHTML = '';
+    if(arr.length===0){
+      ul.innerHTML = `<li class="item"><span class="muted">0 snapshots</span></li>`;
+    } else {
+      arr.sort((a,b)=> new Date(b.created_at)-new Date(a.created_at));
+      arr.forEach(x=>{
+        const li = document.createElement('li'); li.className='item';
+        const when = new Date(x.created_at).toLocaleString();
+        li.innerHTML = `
+          <div>
+            <div><b>${when}</b></div>
+            <div class="muted">${x.lat.toFixed(5)}, ${x.lng.toFixed(5)} · acc ${x.accuracy_m??'—'} m</div>
+            <div contenteditable="true" data-id="${x.id}" class="muted" style="outline:none">${x.note||''}</div>
+          </div>
+          <button class="btn" data-action="focus" data-id="${x.id}">Focus</button>
+          <button class="btn" data-action="delete" data-id="${x.id}">Delete</button>
+        `;
+        ul.appendChild(li);
+      });
+    }
+  }
 
-        function filterByRange(list, start, end) {
-          return list.filter((location) => {
-            const created = new Date(location.created_at);
-            if (Number.isNaN(created.getTime())) return false;
-            if (start && created < start) return false;
-            if (end && created > end) return false;
-            return true;
-          });
-        }
+  // ===== actions =====
+  document.getElementById('btnLocate').onclick = () => {
+    if(!('geolocation' in navigator)){
+      alert('Geolocation is not available'); return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => map.flyTo([pos.coords.latitude, pos.coords.longitude], 15),
+      err => alert('Geolocation error: ' + err.message),
+      { enableHighAccuracy:true, maximumAge:5000, timeout:15000 }
+    );
+  };
 
-        function renderMarkers(locations) {
-          if (markerLayer) {
-            markerLayer.removeFrom(map);
-          }
-          const supportsClusters = typeof L.markerClusterGroup === 'function';
-          markerLayer = locations.length > 100 && supportsClusters ? L.markerClusterGroup({ chunkedLoading: true }) : L.layerGroup();
-          markerIndex = new Map();
-          locations.forEach((location) => {
-            const marker = L.marker([location.lat, location.lng]);
-            marker.locationId = location.id;
-            marker.bindPopup(popupContent(location));
-            markerLayer.addLayer(marker);
-            markerIndex.set(location.id, marker);
-          });
-          markerLayer.addTo(map);
-          if (locations.length) {
-            const bounds = L.latLngBounds(locations.map((location) => [location.lat, location.lng]));
-            map.fitBounds(bounds.pad(0.2));
-          } else {
-            map.setView(DEFAULT_VIEW, 4);
-          }
-        }
+  document.getElementById('btnSnap').onclick = () => {
+    const save = (lat,lng,acc,source) => {
+      const item = addLocation({ lat, lng, accuracy_m: acc, source });
+      // быстрый маркер и фокус
+      L.marker([item.lat, item.lng]).addTo(markersLayer);
+      map.flyTo([item.lat, item.lng], 16);
+      render();
+    };
+    if('geolocation' in navigator){
+      navigator.geolocation.getCurrentPosition(
+        pos => save(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy||0), 'device'),
+        _err => { // без разрешения — центр карты
+          const c = map.getCenter(); save(c.lat, c.lng, null, 'manual');
+        },
+        { enableHighAccuracy:true, maximumAge:5000, timeout:8000 }
+      );
+    } else {
+      const c = map.getCenter(); save(c.lat, c.lng, null, 'manual');
+    }
+  };
 
-        map.on('popupopen', (event) => {
-          const container = event.popup.getElement();
-          if (!container) return;
-          const { locationId } = event.popup._source || {};
-          const editBtn = container.querySelector('[data-action="edit"]');
-          const deleteBtn = container.querySelector('[data-action="delete"]');
-          if (editBtn) {
-            editBtn.addEventListener('click', () => {
-              event.popup.close();
-              handleEdit(locationId);
-            });
-          }
-          if (deleteBtn) {
-            deleteBtn.addEventListener('click', () => {
-              event.popup.close();
-              handleDelete(locationId);
-            });
-          }
-        });
+  // смена даты/диапазона/поиска
+  inpDate.onchange = () => { anchor = inpDate.valueAsDate || new Date(); render(); };
+  document.querySelectorAll('[data-scope]').forEach(btn=>{
+    btn.onclick = () => { scope = btn.dataset.scope; render(); };
+  });
+  document.getElementById('inpSearch').oninput = () => render();
 
-        function popupContent(location) {
-          const accuracy = location.accuracy_m != null ? `${Math.round(location.accuracy_m)} m` : '—';
-          const note = location.note ? escapeHtml(location.note) : '<em>No note</em>';
-          return `
-            <div class="map-popup">
-              <strong>${formatDate(location.created_at)}</strong><br />
-              <span>Accuracy: ${accuracy}</span><br />
-              <span>Source: ${location.source}</span>
-              <p style="margin:0.5rem 0 0;">${note}</p>
-              <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
-                <button type="button" data-action="edit">Edit note</button>
-                <button type="button" class="danger" data-action="delete">Delete</button>
-              </div>
-            </div>
-          `;
-        }
+  // список: фокус / удаление / редактирование заметки
+  document.getElementById('list').onclick = (e)=>{
+    const id = e.target.dataset.id;
+    if(!id) return;
+    if(e.target.dataset.action==='delete'){ deleteLocation(id); render(); }
+    if(e.target.dataset.action==='focus'){
+      const x = loadLocations().find(z=>z.id===id);
+      if(x){ map.flyTo([x.lat, x.lng], 16); }
+    }
+  };
+  // сохранение заметки (по выходу из фокуса)
+  document.getElementById('list').addEventListener('focusout', (e)=>{
+    const id = e.target.dataset.id;
+    if(id){ updateLocation(id, { note: e.target.innerText.trim() }); render(); }
+  });
 
-        function renderList(locations) {
-          historyList.innerHTML = '';
-          historyCount.textContent = `${locations.length} snapshot${locations.length === 1 ? '' : 's'}`;
-          if (!locations.length) {
-            if (historyEmptyPrimary) {
-              historyEmptyPrimary.textContent = state.search ? 'No snapshots match your search.' : 'No snapshots yet for this range.';
-            }
-            historyEmpty.style.display = 'block';
-            return;
-          }
-          historyEmpty.style.display = 'none';
-          locations.forEach((location) => {
-            const item = document.createElement('div');
-            item.className = 'map-list-item';
-            item.innerHTML = `
-              <div class="map-list-item__meta">
-                <span>${formatDate(location.created_at)}</span>
-                <span class="tag">${location.source}</span>
-              </div>
-              <div>${location.note ? escapeHtml(location.note) : '<em style="color:var(--color-muted);">No note</em>'}</div>
-              <div class="map-list-item__actions">
-                <button type="button" class="ghost" data-action="focus">Focus</button>
-                <button type="button" class="secondary" data-action="edit">Edit note</button>
-                <button type="button" class="danger" data-action="delete">Delete</button>
-              </div>
-            `;
-            item.querySelector('[data-action="focus"]').addEventListener('click', () => focusLocation(location));
-            item.querySelector('[data-action="edit"]').addEventListener('click', () => handleEdit(location.id));
-            item.querySelector('[data-action="delete"]').addEventListener('click', () => handleDelete(location.id));
-            historyList.appendChild(item);
-          });
-        }
+  // экспорт/импорт
+  document.getElementById('btnExport').onclick = ()=>{
+    const data = { version:1, locations: loadLocations() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `locations_${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+  document.getElementById('btnImport').onclick = ()=> document.getElementById('fileImport').click();
+  document.getElementById('fileImport').onchange = async (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const text = await file.text();
+    try{
+      const incoming = JSON.parse(text).locations || [];
+      const mapById = new Map(loadLocations().map(x=>[x.id,x]));
+      incoming.forEach(x=>{
+        const ex = mapById.get(x.id);
+        if(!ex || new Date(x.updated_at) > new Date(ex.updated_at)) mapById.set(x.id, x);
+      });
+      saveLocations([...mapById.values()]); render();
+      alert(`Imported ${incoming.length} snapshots`);
+    }catch(err){ alert('Invalid JSON'); }
+    e.target.value = '';
+  };
 
-        function renderCalendar(allLocations) {
-          if (!calendarGrid || !calendarMonth) return;
-          const anchor = ensureDate(state.anchor);
-          calendarMonth.textContent = anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-          calendarGrid.innerHTML = '';
-          const counts = new Map();
-          (allLocations || []).forEach((location) => {
-            const key = toInputValue(location.created_at);
-            if (!key) return;
-            counts.set(key, (counts.get(key) || 0) + 1);
-          });
-          const monthStart = startOfMonth(anchor);
-          const monthEnd = endOfMonth(anchor);
-          const calendarStart = startOfWeek(monthStart);
-          const calendarEnd = endOfWeek(monthEnd);
-          const todayKey = toInputValue(new Date());
-          for (let cursor = new Date(calendarStart); cursor <= calendarEnd; cursor.setDate(cursor.getDate() + 1)) {
-            const day = new Date(cursor);
-            const key = toInputValue(day);
-            const count = counts.get(key) || 0;
-            const isCurrentMonth = day.getMonth() === anchor.getMonth();
-            const isSelected = key === toInputValue(anchor);
-            const isToday = key === todayKey;
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'map-calendar__day';
-            if (!isCurrentMonth) button.classList.add('is-outside');
-            if (isSelected) button.classList.add('is-selected');
-            if (isToday) button.classList.add('is-today');
-            if (count > 0) button.classList.add('has-data');
-            button.dataset.date = key;
-            button.setAttribute('role', 'gridcell');
-            button.setAttribute('aria-pressed', String(isSelected));
-            button.setAttribute('aria-label', formatCalendarAria(day, count));
-            button.innerHTML = `
-              <span class="map-calendar__date">${day.getDate()}</span>
-              ${count > 0 ? `<span class="map-calendar__count">${count}</span>` : ''}
-            `;
-            calendarGrid.appendChild(button);
-          }
-        }
+  // кросс-вкладки
+  window.addEventListener('storage', (e)=>{ if(e.key===LS_LOCATIONS) render(); });
+  window.addEventListener('health:changed', render);
 
-        function formatCalendarAria(date, count) {
-          const label = date.toLocaleDateString(undefined, {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-          });
-          if (!count) return label;
-          return `${label} (${count} snapshot${count === 1 ? '' : 's'})`;
-        }
-
-        function updateRangeLabel(anchor, count) {
-          if (!rangeLabel) return;
-          const modeLabel = state.mode === 'week' ? 'Week' : state.mode === 'month' ? 'Month' : 'Day';
-          let detail = '';
-          if (state.mode === 'week') {
-            const { start, end } = resolveRange('week', anchor);
-            detail = `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
-          } else if (state.mode === 'month') {
-            detail = anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-          } else {
-            detail = anchor.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-          }
-          rangeLabel.textContent = `${modeLabel} view · ${detail} · ${count} snapshot${count === 1 ? '' : 's'}`;
-        }
-
-        function focusLocation(location) {
-          map.setView([location.lat, location.lng], 15);
-          const marker = markerIndex.get(location.id);
-          if (marker && marker.getPopup()) {
-            marker.openPopup();
-          }
-        }
-
-        function handleEdit(id) {
-          if (!id) return;
-          const locations = StorageAPI.loadLocations();
-          const target = locations.find((item) => item.id === id);
-          if (!target) return;
-          const nextNote = window.prompt('Update note', target.note || '');
-          if (nextNote == null) return;
-          StorageAPI.updateLocation(id, { note: nextNote });
-          refresh();
-          showToast('Location updated');
-        }
-
-        function handleDelete(id) {
-          if (!id) return;
-          if (!window.confirm('Delete this snapshot?')) return;
-          StorageAPI.deleteLocation(id);
-          refresh();
-          showToast('Location removed');
-        }
-
-        function requestGeolocation() {
-          return new Promise((resolve, reject) => {
-            if (!navigator.geolocation) {
-              reject(new Error('Geolocation unavailable'));
-              return;
-            }
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 12000,
-              maximumAge: 0,
-            });
-          });
-        }
-
-        async function captureSnapshot() {
-          try {
-            const position = await requestGeolocation();
-            const { latitude, longitude, accuracy } = position.coords;
-            const entry = StorageAPI.addLocation({
-              lat: latitude,
-              lng: longitude,
-              accuracy_m: accuracy,
-              source: 'device',
-            });
-            showToast('Snapshot saved');
-            map.setView([entry.lat, entry.lng], 15);
-            refresh();
-          } catch (err) {
-            console.warn('Device snapshot failed, using map center', err);
-            const center = map.getCenter();
-            const entry = StorageAPI.addLocation({
-              lat: center.lat,
-              lng: center.lng,
-              source: 'manual',
-            });
-            showToast('Manual snapshot saved');
-            map.setView([entry.lat, entry.lng], 15);
-            refresh();
-          }
-        }
-
-        async function goToMyLocation() {
-          try {
-            const position = await requestGeolocation();
-            const { latitude, longitude } = position.coords;
-            map.setView([latitude, longitude], 15);
-            showToast('Centered on your location');
-          } catch (err) {
-            console.warn('Unable to fetch current position', err);
-            showToast('Location unavailable, adjust map manually');
-          }
-        }
-
-        function escapeHtml(text) {
-          const div = document.createElement('div');
-          div.textContent = text;
-          return div.innerHTML;
-        }
-
-        function formatDate(value) {
-          const parsed = new Date(value);
-          if (Number.isNaN(parsed.getTime())) return '';
-          return parsed.toLocaleString();
-        }
-
-        function startOfDay(date) {
-          const d = new Date(date);
-          d.setHours(0, 0, 0, 0);
-          return d;
-        }
-
-        function endOfDay(date) {
-          const d = new Date(date);
-          d.setHours(23, 59, 59, 999);
-          return d;
-        }
-
-        function startOfWeek(date) {
-          const d = new Date(date);
-          d.setHours(0, 0, 0, 0);
-          const diff = (d.getDay() + 6) % 7;
-          d.setDate(d.getDate() - diff);
-          return d;
-        }
-
-        function endOfWeek(date) {
-          const start = startOfWeek(date);
-          const end = new Date(start);
-          end.setDate(start.getDate() + 6);
-          end.setHours(23, 59, 59, 999);
-          return end;
-        }
-
-        function startOfMonth(date) {
-          const d = new Date(date);
-          d.setDate(1);
-          d.setHours(0, 0, 0, 0);
-          return d;
-        }
-
-        function endOfMonth(date) {
-          const start = startOfMonth(date);
-          const end = new Date(start);
-          end.setMonth(end.getMonth() + 1);
-          end.setMilliseconds(-1);
-          return end;
-        }
-
-        function addMonths(date, amount) {
-          const d = new Date(date);
-          d.setMonth(d.getMonth() + amount);
-          return d;
-        }
-
-        snapshotBtn.addEventListener('click', captureSnapshot);
-        myLocationBtn.addEventListener('click', goToMyLocation);
-        modeButtons.forEach((button) => {
-          button.addEventListener('click', () => {
-            const { mode } = button.dataset;
-            if (!mode) return;
-            state.mode = mode;
-            refresh();
-          });
-        });
-        if (searchInput) {
-          searchInput.addEventListener('input', (event) => {
-            state.search = event.target.value;
-            refresh();
-          });
-        }
-        dateButton.addEventListener('click', () => {
-          if (typeof dateInput.showPicker === 'function') {
-            dateInput.showPicker();
-          } else {
-            dateInput.focus();
-            dateInput.click();
-          }
-        });
-        dateInput.addEventListener('change', (event) => {
-          state.anchor = fromInputValue(event.target.value);
-          refresh();
-        });
-        if (calendarPrev) {
-          calendarPrev.addEventListener('click', () => {
-            state.anchor = addMonths(state.anchor, -1);
-            refresh();
-          });
-        }
-        if (calendarNext) {
-          calendarNext.addEventListener('click', () => {
-            state.anchor = addMonths(state.anchor, 1);
-            refresh();
-          });
-        }
-        if (calendarGrid) {
-          calendarGrid.addEventListener('click', (event) => {
-            const target = event.target.closest('button[data-date]');
-            if (!target) return;
-            state.anchor = fromInputValue(target.dataset.date);
-            state.mode = 'day';
-            refresh();
-          });
-        }
-        exportBtn.addEventListener('click', () => {
-          const data = StorageAPI.exportJson();
-          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `health-map-${new Date().toISOString().slice(0, 10)}.json`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          showToast('Export ready');
-        });
-        importBtn.addEventListener('click', () => importFile.click());
-        importFile.addEventListener('change', async (event) => {
-          const file = event.target.files && event.target.files[0];
-          if (!file) return;
-          try {
-            const text = await file.text();
-            const payload = JSON.parse(text);
-            const result = StorageAPI.importJson(payload);
-            showToast(`Import complete: events +${result.events.added}, locations +${result.locations.added}`);
-          } catch (err) {
-            console.error('Import failed', err);
-            showToast('Import failed');
-          } finally {
-            event.target.value = '';
-          }
-        });
-
-        window.addEventListener('health:changed', refresh);
-
-        if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./service-worker.js').catch((err) => {
-              console.warn('Service worker registration failed', err);
-            });
-          });
-        }
-      })();
-    </script>
-  </body>
+  // init
+  initMap(); render();
+  </script>
+</body>
 </html>
+<script>
+/* --- текущая позиция: синяя точка + круг точности --- */
+let meMarker = null, meCircle = null;
+
+function showCurrentPosition() {
+  if (!('geolocation' in navigator)) {
+    alert('Geolocation is not available on this device/browser.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const acc = Math.round(pos.coords.accuracy || 0);
+
+      if (meMarker) { map.removeLayer(meMarker); }
+      if (meCircle) { map.removeLayer(meCircle); }
+
+      // синяя точка в центре
+      meMarker = L.circleMarker([lat, lng], {
+        radius: 7, color: '#2563eb', fillColor: '#2563eb', fillOpacity: 1, weight: 2
+      }).addTo(map);
+
+      // круг точности
+      meCircle = L.circle([lat, lng], {
+        radius: acc, color: '#60a5fa', fillColor: '#93c5fd', fillOpacity: 0.15, weight: 1
+      }).addTo(map);
+
+      map.flyTo([lat, lng], 16);
+    },
+    (err) => {
+      alert('Geolocation error: ' + err.message + '\nРазреши доступ к геолокации.');
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+}
+
+// привяжем к кнопке
+document.getElementById('btnLocate')?.addEventListener('click', showCurrentPosition);
+
+/* --- опционально: снапшот берёт текущую позицию, если она известна --- */
+function snapshotFromCurrentOrCenter() {
+  const center = map.getCenter();
+  const fromCurrent = meMarker?.getLatLng() || null;
+  const lat = fromCurrent ? fromCurrent.lat : center.lat;
+  const lng = fromCurrent ? fromCurrent.lng : center.lng;
+  const acc = meCircle ? meCircle.getRadius() : null;
+
+  // если у тебя уже есть свой addLocation(...) — оставь его
+  if (typeof addLocation === 'function') {
+    const item = addLocation({ lat, lng, accuracy_m: acc, source: fromCurrent ? 'device' : 'manual' });
+    L.marker([item.lat, item.lng]).addTo(markersLayer || map);
+    map.flyTo([item.lat, item.lng], 16);
+    if (typeof render === 'function') render();
+  } else {
+    // временный маркер, если хранилища пока нет
+    L.marker([lat, lng]).addTo(map).bindPopup('Snapshot').openPopup();
+  }
+}
+
+// если у тебя кнопка Snapshot имеет id="btnSnap"
+document.getElementById('btnSnap')?.addEventListener('click', snapshotFromCurrentOrCenter);
+</script>
