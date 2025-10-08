@@ -5,7 +5,7 @@
   "description": "Diary, summary, and map snapshots with offline support.",
   "scripts": {
     "start": "npx serve .",
-    "build": "echo 'Static build only'",
+    "build": "node scripts/generate-version.mjs",
     "cap:init": "npx cap init Health2099 com.health2099.app --web-dir . --npm-client npm",
     "cap:copy": "npx cap copy",
     "cap:sync": "npx cap sync",

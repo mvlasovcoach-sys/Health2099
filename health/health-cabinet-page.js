@@ -68,6 +68,7 @@ function init() {
   const root = document.querySelector('[data-health-dashboard]');
   if (!root) return;
   mountComponents(root);
+  wireControls();
 }
 
 if (document.readyState === 'loading') {
@@ -88,3 +89,27 @@ window.addEventListener('beforeunload', () => {
     }
   }
 });
+
+function wireControls() {
+  const resetButton = document.querySelector('[data-action="reset-cache"]');
+  if (!resetButton) return;
+  if (!('caches' in window) || !('serviceWorker' in navigator)) {
+    resetButton.disabled = true;
+    resetButton.title = 'Offline cache not supported in this browser';
+    return;
+  }
+  resetButton.addEventListener('click', async () => {
+    resetButton.disabled = true;
+    resetButton.textContent = 'Clearing…';
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    } catch (error) {
+      console.warn('[health] Failed to reset caches', error);
+    } finally {
+      window.location.reload(true);
+    }
+  });
+}
