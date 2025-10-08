@@ -330,8 +330,8 @@ textarea {
 
 .map {
   width: 100%;
-  min-height: 420px;
-  height: 62vh;
+  min-height: 520px;
+  height: 520px;
   border-radius: 16px;
   overflow: hidden;
 }
