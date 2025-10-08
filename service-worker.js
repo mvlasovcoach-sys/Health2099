@@ -17,6 +17,8 @@ const APP_SHELL = [
   './service-worker.js'
 ];
 
+const BYPASS_HOSTS = ['tile.openstreetmap.org', 'unpkg.com'];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
@@ -38,11 +40,9 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(event.request.url);
-  const isBypassedHost =
-    url.hostname === 'unpkg.com' || url.hostname.endsWith('.tile.openstreetmap.org') || url.hostname === 'tile.openstreetmap.org';
+  const shouldBypass = BYPASS_HOSTS.some((host) => url.hostname === host || url.hostname.endsWith(`.${host}`));
 
-  if (isBypassedHost) {
-    event.respondWith(fetch(event.request));
+  if (shouldBypass) {
     return;
   }
 
