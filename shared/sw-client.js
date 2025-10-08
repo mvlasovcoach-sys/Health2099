@@ -1,4 +1,58 @@
 (function () {
+  function normalizeBasePath(value) {
+    if (!value) return '';
+    var raw = String(value).trim();
+    if (!raw || raw === '/' || raw === '.') {
+      return '';
+    }
+    if (/^https?:/i.test(raw)) {
+      try {
+        raw = new URL(raw).pathname || '';
+      } catch (err) {
+        // Ignore malformed URLs.
+      }
+    }
+    raw = raw.replace(/\/+$/, '');
+    if (!raw) {
+      return '';
+    }
+    if (!raw.startsWith('/')) {
+      raw = '/' + raw;
+    }
+    return raw === '/' ? '' : raw;
+  }
+
+  function getBasePath(globalObject) {
+    if (!globalObject) return '';
+    var doc = globalObject.document;
+    if (doc && doc.documentElement && doc.documentElement.dataset && doc.documentElement.dataset.basepath) {
+      var datasetValue = doc.documentElement.dataset.basepath;
+      var normalized = normalizeBasePath(datasetValue);
+      if (normalized) return normalized;
+    }
+    if (typeof globalObject.__BASE_PATH__ === 'string') {
+      var fromGlobal = normalizeBasePath(globalObject.__BASE_PATH__);
+      if (fromGlobal) return fromGlobal;
+    }
+    var assetPrefix = globalObject.__NEXT_DATA__ && globalObject.__NEXT_DATA__.assetPrefix;
+    if (typeof assetPrefix === 'string') {
+      return normalizeBasePath(assetPrefix);
+    }
+    return '';
+  }
+
+  function withBasePath(globalObject, path) {
+    if (typeof path !== 'string' || !path.length || path[0] !== '/') {
+      return path;
+    }
+    var base = getBasePath(globalObject);
+    if (!base) return path;
+    if (path === base || path.indexOf(base + '/') === 0) {
+      return path;
+    }
+    return base.endsWith('/') ? base.slice(0, -1) + path : base + path;
+  }
+
   const globalObject = typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : null;
   const BUILD_INFO = Object.freeze({
     commit: '__BUILD_COMMIT__',
@@ -30,7 +84,8 @@
   let refreshing = false;
 
   globalObject.addEventListener('load', () => {
-    const swUrl = new URL('/service-worker.js', globalObject.location.origin);
+    const swPath = withBasePath(globalObject, '/service-worker.js');
+    const swUrl = new URL(swPath, globalObject.location.origin);
     if (BUILD_INFO.commitShort && BUILD_INFO.commitShort !== '__BUILD_COMMIT_SHORT__') {
       swUrl.searchParams.set('v', BUILD_INFO.commitShort);
     }
