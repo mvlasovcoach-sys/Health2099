@@ -446,6 +446,11 @@ textarea {
   overflow: hidden;
 }
 
+.page-header__content {
+  display: grid;
+  gap: var(--space-3);
+}
+
 .page-header::after {
   content: '';
   position: absolute;
@@ -478,6 +483,37 @@ textarea {
   margin: 0;
   max-width: 60ch;
   color: var(--color-muted);
+}
+
+.page-header__meta {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+  justify-items: end;
+  text-align: right;
+}
+
+.page-header__meta .badge {
+  box-shadow: var(--shadow-xs);
+}
+
+.page-header__badge--version {
+  background: rgba(56, 189, 248, 0.22);
+  color: var(--color-info);
+}
+
+@media (max-width: 720px) {
+  .page-header__meta {
+    position: static;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .page-header.health-dashboard__hero {
+    padding-top: calc(var(--space-5) + 2.5rem);
+  }
 }
 
 .card-grid {
@@ -1134,6 +1170,63 @@ form {
   color: var(--color-primary);
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.diagnostics {
+  padding-bottom: var(--space-6);
+}
+
+.diagnostics__list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.diagnostics__list > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.diagnostics__list dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-muted);
+}
+
+.diagnostics__list dd {
+  margin: 0;
+  color: var(--color-heading);
+  font-weight: 600;
+}
+
+.diagnostics__routes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.diagnostics__routes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.diagnostics__routes code {
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  color: var(--color-heading);
+}
+
+.diagnostics__routes-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
 }
 
 .empty-state {

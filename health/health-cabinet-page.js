@@ -9,12 +9,78 @@ import { createNotesCard } from '../components/health/NotesCard.js';
 
 const subscribers = [];
 
+function clampPercent(value) {
+  if (!Number.isFinite(value)) return null;
+  const clamped = Math.max(0, Math.min(100, Math.round(value)));
+  return clamped;
+}
+
+function formatDeviceStatus(device) {
+  const fallback = dashboard.fixture?.device || {};
+  const snapshot = { ...fallback, ...(device || {}) };
+
+  const parts = [];
+  if (snapshot.online) {
+    parts.push('Device: Online');
+  } else {
+    const minutes = Number.isFinite(snapshot.offline_min) ? Math.max(1, Math.round(snapshot.offline_min)) : 0;
+    parts.push(minutes ? `Device: Offline ${minutes}+ min` : 'Device: Offline');
+  }
+
+  const battery = clampPercent(snapshot.battery);
+  if (battery != null) {
+    parts.push(`Battery ${battery}%`);
+  }
+
+  const mode = typeof snapshot.input === 'string' ? snapshot.input.toLowerCase() : 'manual';
+  const indicator =
+    mode === 'auto' ? '●●● auto' : mode === 'timeout' ? '●○● timeout' : '●○○ manual';
+  parts.push(indicator);
+
+  return parts.join(' · ');
+}
+
+function updateDeviceStatusBanner(element, device) {
+  if (!element) return;
+  try {
+    element.textContent = formatDeviceStatus(device);
+  } catch (err) {
+    console.warn('[health] Failed to update device status banner', err);
+  }
+}
+
+function applyVersionBadge(element) {
+  if (!element) return;
+  const info = window.__BUILD_INFO__ || {};
+  const version = info.commitShort || 'dev';
+  element.textContent = `v:${version}`;
+  const lines = [];
+  if (info.commit) {
+    lines.push(`Commit ${info.commit}`);
+  }
+  if (info.builtAt) {
+    try {
+      const builtDate = new Date(info.builtAt);
+      lines.push(
+        Number.isNaN(builtDate.getTime()) ? `Built ${info.builtAt}` : `Built ${builtDate.toLocaleString()}`,
+      );
+    } catch (err) {
+      lines.push(`Built ${info.builtAt}`);
+    }
+  }
+  if (lines.length) {
+    element.title = lines.join('\n');
+  }
+}
+
 function mountComponents(root) {
   const topRow = root.querySelector('[data-section="top"]');
   const kpiRow = root.querySelector('[data-section="kpi"]');
   const ringRowContainer = root.querySelector('[data-section="rings"]');
   const factsRowContainer = root.querySelector('[data-section="facts"]');
   const notesContainer = root.querySelector('[data-section="notes"]');
+  const deviceBanner = root.querySelector('[data-device-status]');
+  const versionBadge = root.querySelector('[data-version-badge]');
 
   const dualGauge = createDualGauge();
   const deviceStatus = createDeviceStatus();
@@ -22,6 +88,14 @@ function mountComponents(root) {
   const ringRow = createRingRow();
   const factsRow = createFactsRow();
   const notesCard = createNotesCard();
+
+  applyVersionBadge(versionBadge);
+  updateDeviceStatusBanner(deviceBanner, dashboard.getSnapshot()?.device);
+  if (typeof window !== 'undefined' && versionBadge) {
+    const handleBuildInfo = () => applyVersionBadge(versionBadge);
+    window.addEventListener('build:info', handleBuildInfo);
+    subscribers.push(() => window.removeEventListener('build:info', handleBuildInfo));
+  }
 
   if (topRow) {
     topRow.appendChild(dualGauge.element);
@@ -54,6 +128,7 @@ function mountComponents(root) {
     ringRow.update(rings);
     factsRow.update(facts);
     notesCard.update(notes);
+    updateDeviceStatusBanner(deviceBanner, device);
   }
 
   render(dashboard.getSnapshot());

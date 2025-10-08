@@ -18,7 +18,9 @@
         }
       }
 
-      applyBuildBadge(container.querySelector('[data-build-badge]'));
+      const buildBadge = container.querySelector('[data-build-badge]');
+      applyBuildBadge(buildBadge);
+      attachBuildBadgeListener(buildBadge);
     } catch (err) {
       console.error('Failed to load navigation include', err);
     }
@@ -26,17 +28,38 @@
 
   function applyBuildBadge(target) {
     if (!target) return;
-    const info = window.__BUILD_INFO__;
-    if (!info || !info.commitShort || !info.builtAt) return;
+    const info = window.__BUILD_INFO__ || {};
     try {
-      const date = new Date(info.builtAt);
-      const formatted = Number.isNaN(date.getTime()) ? info.builtAt : date.toLocaleString();
-      target.textContent = `v:${info.commitShort} · ${formatted}`;
-      target.setAttribute('title', `Build ${info.commit}\n${formatted}`);
+      let formatted = '';
+      if (info.builtAt) {
+        const date = new Date(info.builtAt);
+        formatted = Number.isNaN(date.getTime()) ? String(info.builtAt) : date.toLocaleString();
+      }
+      const short = info.commitShort || 'dev';
+      target.textContent = formatted ? `v:${short} · ${formatted}` : `v:${short}`;
+      const titleParts = [];
+      if (info.commit) {
+        titleParts.push(`Build ${info.commit}`);
+      }
+      if (formatted) {
+        titleParts.push(formatted);
+      }
+      if (titleParts.length) {
+        target.setAttribute('title', titleParts.join('\n'));
+      }
     } catch (err) {
       console.warn('Failed to format build badge', err);
-      target.textContent = `v:${info.commitShort}`;
+      const short = (window.__BUILD_INFO__ && window.__BUILD_INFO__.commitShort) || 'dev';
+      target.textContent = `v:${short}`;
     }
+  }
+
+  function attachBuildBadgeListener(target) {
+    if (!target || typeof window === 'undefined') return;
+    if (target.dataset.buildBadgeListening === 'true') return;
+    const handler = () => applyBuildBadge(target);
+    window.addEventListener('build:info', handler);
+    target.dataset.buildBadgeListening = 'true';
   }
 
   if (document.readyState === 'loading') {

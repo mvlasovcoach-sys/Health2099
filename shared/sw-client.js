@@ -1,25 +1,41 @@
 (function () {
+  const globalObject = typeof window !== 'undefined' ? window : typeof globalThis !== 'undefined' ? globalThis : null;
   const BUILD_INFO = Object.freeze({
     commit: '__BUILD_COMMIT__',
     commitShort: '__BUILD_COMMIT_SHORT__',
     builtAt: '__BUILD_DATE_ISO__',
   });
 
-  window.__BUILD_INFO__ = BUILD_INFO;
+  if (globalObject) {
+    globalObject.__BUILD_INFO__ = BUILD_INFO;
+    dispatchBuildInfo(globalObject, BUILD_INFO);
+  }
 
-  if (!('serviceWorker' in navigator)) {
+  if (!globalObject) {
+    return;
+  }
+
+  const navigatorRef = globalObject.navigator;
+  if (!navigatorRef || !('serviceWorker' in navigatorRef)) {
+    return;
+  }
+
+  const swPreference = globalObject.__SW_ENABLED__;
+  const shouldRegister = swPreference === true || swPreference === 'on';
+  if (!shouldRegister) {
+    console.info('[sw] Registration disabled (set window.__SW_ENABLED__ = "on" to enable).');
     return;
   }
 
   let refreshing = false;
 
-  window.addEventListener('load', () => {
-    const swUrl = new URL('/service-worker.js', window.location.origin);
+  globalObject.addEventListener('load', () => {
+    const swUrl = new URL('/service-worker.js', globalObject.location.origin);
     if (BUILD_INFO.commitShort && BUILD_INFO.commitShort !== '__BUILD_COMMIT_SHORT__') {
       swUrl.searchParams.set('v', BUILD_INFO.commitShort);
     }
 
-    navigator.serviceWorker
+    navigatorRef.serviceWorker
       .register(swUrl.href)
       .then((registration) => {
         handleRegistration(registration);
@@ -29,10 +45,10 @@
       });
   });
 
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
+  navigatorRef.serviceWorker.addEventListener('controllerchange', () => {
     if (refreshing) return;
     refreshing = true;
-    window.location.reload();
+    globalObject.location.reload();
   });
 
   function handleRegistration(registration) {
@@ -116,5 +132,25 @@
   function hideToast(element) {
     if (!element) return;
     element.classList.remove('visible');
+  }
+
+  function dispatchBuildInfo(target, detail) {
+    if (!target || typeof target.dispatchEvent !== 'function') return;
+    try {
+      let event;
+      if (typeof target.CustomEvent === 'function') {
+        event = new target.CustomEvent('build:info', { detail });
+      } else if (typeof CustomEvent === 'function') {
+        event = new CustomEvent('build:info', { detail });
+      } else if (typeof document !== 'undefined' && typeof document.createEvent === 'function') {
+        event = document.createEvent('CustomEvent');
+        event.initCustomEvent('build:info', false, false, detail);
+      }
+      if (event) {
+        target.dispatchEvent(event);
+      }
+    } catch (err) {
+      console.debug('[sw] Failed to dispatch build info event', err);
+    }
   }
 })();
