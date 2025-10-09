@@ -4,207 +4,105 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#2563eb" />
-    <link rel="manifest" data-asset="href" data-href="manifest.webmanifest" />
-    <link rel="preload" data-asset="href" data-href="assets/css/summary.css?v=20240714" as="style" />
-    <link rel="preload" data-asset="href" data-href="assets/css/animations.css?v=20240714" as="style" />
-    <link rel="preload" data-asset="href" data-href="assets/css/timeline.css?v=20240714" as="style" />
-    <link rel="preload" data-asset="href" data-href="assets/css/kpi-rings.css?v=20240714" as="style" />
-    <link rel="preload" data-asset="href" data-href="assets/css/ui.css?v=20240714" as="style" />
-    <style>
-      :root {
-        color-scheme: dark;
-        font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        background: radial-gradient(circle at 20% 20%, rgba(96, 165, 250, 0.18), transparent 55%),
-          radial-gradient(circle at 80% 0%, rgba(15, 118, 110, 0.28), transparent 60%),
-          linear-gradient(160deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 1) 100%);
-        color: #f8fafc;
-      }
-      .app-shell {
-        display: grid;
-        min-height: 100vh;
-        grid-template-rows: auto 1fr auto;
-      }
-      .summary-viewport {
-        max-width: 1280px;
-        margin: 0 auto;
-        width: 100%;
-        padding: clamp(1.5rem, 2vw, 3rem) clamp(1rem, 2vw, 3rem) 3rem;
-        display: grid;
-        gap: 1.75rem;
-      }
-      .summary-header,
-      .summary-main,
-      .summary-sidebar {
-        background: linear-gradient(145deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.58));
-        border-radius: 24px;
-        border: 1px solid rgba(96, 165, 250, 0.18);
-        box-shadow: 0 12px 48px rgba(2, 6, 23, 0.38);
-        backdrop-filter: blur(28px);
-        -webkit-backdrop-filter: blur(28px);
-      }
-      .summary-header {
-        padding: 2.5rem clamp(2rem, 3vw, 3rem);
-      }
-      .summary-main {
-        padding: clamp(1.75rem, 2vw, 2.5rem);
-        display: grid;
-        gap: 1.75rem;
-      }
-      .summary-sidebar {
-        padding: clamp(1.5rem, 2vw, 2.25rem);
-        display: grid;
-        gap: 1.5rem;
-        align-content: start;
-      }
-      @media (min-width: 960px) {
-        .summary-viewport {
-          grid-template-columns: 2fr 1fr;
-          align-items: start;
-        }
-      }
-    </style>
-    <link rel="stylesheet" data-asset="href" data-href="assets/css/theme.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" data-asset="href" data-href="assets/css/summary.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" data-asset="href" data-href="assets/css/animations.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" data-asset="href" data-href="assets/css/timeline.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" data-asset="href" data-href="assets/css/kpi-rings.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" data-asset="href" data-href="assets/css/ui.css?v=20240714" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" data-asset="href" data-href="assets/css/badges.css?v=20240714" media="print" onload="this.media='all'" />
-    <script>
-      (function () {
-        const ABSOLUTE = /^(?:[a-z]+:)?\/\//i;
-        function ensureTrailingSlash(value) {
-          if (!value) return '/';
-          return value.endsWith('/') ? value : `${value}/`;
-        }
-        function computeBase() {
-          const fromGlobal = typeof window.__HEALTH2099_BASE__ === 'string' ? window.__HEALTH2099_BASE__ : null;
-          if (fromGlobal) return ensureTrailingSlash(fromGlobal);
-          const { pathname } = window.location;
-          const base = pathname.endsWith('/') ? pathname : pathname.replace(/[^/]*$/, '');
-          return ensureTrailingSlash(base);
-        }
-        const basePath = computeBase();
-        function withBase(path) {
-          if (!path || ABSOLUTE.test(path)) return path;
-          if (path.startsWith('/')) return path;
-          return `${basePath}${path.replace(/^\.\//, '')}`;
-        }
-        window.__HEALTH2099_BASE__ = basePath;
-        window.__HEALTH2099_WITH_BASE__ = withBase;
-        function applyAssets() {
-          const nodes = document.querySelectorAll('[data-asset]');
-          nodes.forEach((node) => {
-            const attr = node.getAttribute('data-asset');
-            const original = node.getAttribute(`data-${attr}`);
-            if (!attr || !original) return;
-            const value = withBase(original);
-            if (attr === 'href') {
-              node.setAttribute('href', value);
-            } else if (attr === 'src') {
-              node.setAttribute('src', value);
-            }
-          });
-        }
-        const observer = new MutationObserver(() => applyAssets());
-        observer.observe(document.documentElement, { childList: true, subtree: true });
-        document.addEventListener('DOMContentLoaded', () => {
-          applyAssets();
-          observer.disconnect();
-        });
-        applyAssets();
-      })();
-    </script>
-    <noscript>
-      <link rel="stylesheet" href="assets/css/theme.css?v=20240714" />
-      <link rel="stylesheet" href="assets/css/summary.css?v=20240714" />
-      <link rel="stylesheet" href="assets/css/animations.css?v=20240714" />
-      <link rel="stylesheet" href="assets/css/timeline.css?v=20240714" />
-      <link rel="stylesheet" href="assets/css/badges.css?v=20240714" />
-      <link rel="stylesheet" href="assets/css/kpi-rings.css?v=20240714" />
-      <link rel="stylesheet" href="assets/css/ui.css?v=20240714" />
-    </noscript>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./shared/styles.css" />
+    <link rel="stylesheet" href="./assets/css/summary.css?v=20240714" />
+    <link rel="stylesheet" href="./assets/css/animations.css?v=20240714" />
+    <link rel="stylesheet" href="./assets/css/timeline.css?v=20240714" />
+    <link rel="stylesheet" href="./assets/css/kpi-rings.css?v=20240714" />
+    <link rel="stylesheet" href="./assets/css/ui.css?v=20240714" />
+    <link rel="stylesheet" href="./assets/css/badges.css?v=20240714" />
   </head>
   <body class="app-shell" data-page="summary">
-    <div data-include="nav"></div>
-    <div class="summary-viewport">
-      <header id="summary-header" class="summary-header" role="banner"></header>
-      <main class="summary-main" id="main" role="main">
-        <section aria-labelledby="kpi-heading" class="kpi-grid" id="kpi-grid" role="region" data-kpi-rings>
-          <h2 id="kpi-heading" class="visually-hidden">Key wellness metrics</h2>
+    <aside id="sidenav" class="sidebar" aria-label="Primary navigation"></aside>
+    <main class="app-main">
+      <div class="summary-viewport">
+        <section class="hero hero--summary rounded-3xl">
+          <div class="hero__overline">SUMMARY</div>
+          <h1 class="hero__title">Wellness snapshot</h1>
+          <p class="hero__subtitle">
+            Live overview of hydration, sleep, steps, caffeine and meds. Everything updates live across tabs.
+          </p>
         </section>
-        <section class="quick-actions" aria-labelledby="actions-heading" role="region">
-          <header>
-            <h2 id="actions-heading">Quick actions</h2>
-            <p>Log habits in a tap. Offline entries queue automatically.</p>
-          </header>
-          <div class="quick-actions__grid" id="quick-actions" role="group" aria-label="Quick log actions"></div>
-        </section>
-        <section class="timeline" aria-labelledby="timeline-heading" role="region">
-          <header class="timeline__header">
-            <div class="timeline__title">
-              <h2 id="timeline-heading">Today</h2>
-              <p id="timeline-count" class="timeline-meta"></p>
-            </div>
-            <div class="timeline__controls">
-              <div class="timeline-filters" id="timeline-filters" role="group" aria-label="Timeline range"></div>
-              <button type="button" class="card-press" id="seed-demo">Seed demo data</button>
-            </div>
-          </header>
-          <div class="timeline-list" id="timeline-list" aria-live="polite"></div>
-        </section>
-        <section class="insights" aria-labelledby="insights-heading" id="insights" role="region">
-          <h2 id="insights-heading">Insights &amp; nudges</h2>
-        </section>
-        <section class="streaks" aria-labelledby="streaks-heading" role="region">
-          <h2 id="streaks-heading">Streaks</h2>
-          <div class="streak-list" id="streak-list"></div>
-        </section>
-        <section class="badges" aria-labelledby="badges-heading" role="region">
-          <h2 id="badges-heading" class="visually-hidden">Badges</h2>
-          <div id="badge-collection"></div>
-        </section>
-      </main>
-      <aside class="summary-sidebar" aria-labelledby="sidebar-heading">
-        <h2 id="sidebar-heading" class="visually-hidden">Sidebar</h2>
-        <section class="sidebar-section" aria-labelledby="targets-heading">
-          <header>
-            <h3 id="targets-heading">Targets</h3>
-          </header>
-          <div class="target-item">
-            <label for="target-water">Water goal (ml)</label>
-            <input id="target-water" type="number" inputmode="numeric" min="0" />
+        <div class="summary-layout">
+          <div class="summary-content">
+            <header id="summary-header" class="summary-header" role="banner"></header>
+            <section class="summary-main" id="main">
+              <section aria-labelledby="kpi-heading" class="kpi-grid" id="kpi-grid" role="region" data-kpi-rings>
+                <h2 id="kpi-heading" class="visually-hidden">Key wellness metrics</h2>
+              </section>
+              <section class="quick-actions" aria-labelledby="actions-heading" role="region">
+                <header>
+                  <h2 id="actions-heading">Quick actions</h2>
+                  <p>Log habits in a tap. Offline entries queue automatically.</p>
+                </header>
+                <div class="quick-actions__grid" id="quick-actions" role="group" aria-label="Quick log actions"></div>
+              </section>
+              <section class="timeline" aria-labelledby="timeline-heading" role="region">
+                <header class="timeline__header">
+                  <div class="timeline__title">
+                    <h2 id="timeline-heading">Today</h2>
+                    <p id="timeline-count" class="timeline-meta"></p>
+                  </div>
+                  <div class="timeline__controls">
+                    <div class="timeline-filters" id="timeline-filters" role="group" aria-label="Timeline range"></div>
+                    <button type="button" class="card-press" id="seed-demo">Seed demo data</button>
+                  </div>
+                </header>
+                <div class="timeline-list" id="timeline-list" aria-live="polite"></div>
+              </section>
+              <section class="insights" aria-labelledby="insights-heading" id="insights" role="region">
+                <h2 id="insights-heading">Insights &amp; nudges</h2>
+              </section>
+              <section class="streaks" aria-labelledby="streaks-heading" role="region">
+                <h2 id="streaks-heading">Streaks</h2>
+                <div class="streak-list" id="streak-list"></div>
+              </section>
+              <section class="badges" aria-labelledby="badges-heading" role="region">
+                <h2 id="badges-heading" class="visually-hidden">Badges</h2>
+                <div id="badge-collection"></div>
+              </section>
+            </section>
           </div>
-          <div class="target-item">
-            <label for="target-steps">Steps goal</label>
-            <input id="target-steps" type="number" inputmode="numeric" min="0" />
-          </div>
-          <div class="target-item">
-            <label for="target-sleep">Sleep goal (minutes)</label>
-            <input id="target-sleep" type="number" inputmode="numeric" min="0" />
-          </div>
-          <div class="target-item">
-            <label for="target-caffeine">Caffeine ceiling (mg)</label>
-            <input id="target-caffeine" type="number" inputmode="numeric" min="0" />
-          </div>
-        </section>
-        <section class="sidebar-section" aria-labelledby="meds-heading">
-          <header>
-            <h3 id="meds-heading">Today&apos;s meds</h3>
-            <button type="button" id="add-med" class="card-press">Add</button>
-          </header>
-          <div class="meds-list" id="meds-list" aria-live="polite"></div>
-        </section>
-      </aside>
-    </div>
-    <footer class="summary-footer" role="contentinfo">
-      Synced via shared storage · Broadcast ready
-    </footer>
-    <script data-asset="src" data-src="shared/nav-loader.js" defer></script>
-    <script type="module" data-asset="src" data-src="assets/js/summary-page.js?v=20240714" defer></script>
+          <aside class="summary-sidebar" aria-labelledby="sidebar-heading">
+            <h2 id="sidebar-heading" class="visually-hidden">Sidebar</h2>
+            <section class="sidebar-section" aria-labelledby="targets-heading">
+              <header>
+                <h3 id="targets-heading">Targets</h3>
+              </header>
+              <div class="target-item">
+                <label for="target-water">Water goal (ml)</label>
+                <input id="target-water" type="number" inputmode="numeric" min="0" />
+              </div>
+              <div class="target-item">
+                <label for="target-steps">Steps goal</label>
+                <input id="target-steps" type="number" inputmode="numeric" min="0" />
+              </div>
+              <div class="target-item">
+                <label for="target-sleep">Sleep goal (minutes)</label>
+                <input id="target-sleep" type="number" inputmode="numeric" min="0" />
+              </div>
+              <div class="target-item">
+                <label for="target-caffeine">Caffeine ceiling (mg)</label>
+                <input id="target-caffeine" type="number" inputmode="numeric" min="0" />
+              </div>
+            </section>
+            <section class="sidebar-section" aria-labelledby="meds-heading">
+              <header>
+                <h3 id="meds-heading">Today&apos;s meds</h3>
+                <button type="button" id="add-med" class="card-press">Add</button>
+              </header>
+              <div class="meds-list" id="meds-list" aria-live="polite"></div>
+            </section>
+          </aside>
+        </div>
+        <footer class="summary-footer" role="contentinfo">
+          Synced via shared storage · Broadcast ready
+        </footer>
+      </div>
+    </main>
+    <script src="./shared/storage.js" defer></script>
+    <script src="./assets/js/includes.js" defer></script>
+    <script type="module" src="./assets/js/summary-page.js?v=20240714"></script>
   </body>
 </html>
