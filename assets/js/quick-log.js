@@ -23,6 +23,8 @@ const GROUPS = [
     id: 'water',
     label: 'Water',
     unit: 'ml',
+    ariaUnit: 'milliliters',
+    summaryUnit: ' L',
     targetKey: 'water_ml',
     summaryLabel: 'Today',
     sum: (db) => sumToday('water', db),
@@ -31,6 +33,8 @@ const GROUPS = [
     id: 'steps',
     label: 'Steps',
     unit: 'steps',
+    ariaUnit: 'steps',
+    summaryUnit: '',
     targetKey: 'steps',
     summaryLabel: 'Today',
     sum: (db) => sumToday('steps', db),
@@ -39,11 +43,19 @@ const GROUPS = [
     id: 'caffeine',
     label: 'Caffeine',
     unit: 'mg',
+    ariaUnit: 'milligrams',
+    summaryUnit: ' mg',
     targetKey: 'caffeine_mg',
     summaryLabel: 'Week',
     sum: (db) => sumWeek('caffeine', db),
   },
 ];
+
+const integerFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
+const literFormatter = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
 
 const SECONDARY_ACTIONS = [
   { id: 'meds', type: 'med', value: 1, unit: 'dose', label: 'Take meds', hint: 'Mark taken' },
@@ -131,14 +143,15 @@ function render(container) {
     section.appendChild(header);
 
     const pillGrid = document.createElement('div');
-    pillGrid.className = 'quick-log__pills';
+    pillGrid.className = 'quick-log__pills pill-row';
     (PRESETS[group.id] || []).forEach((value) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'quick-log__pill card-hover card-press';
+      button.className = 'quick-log__pill card-hover card-press pill--compact';
       button.dataset.value = String(value);
       button.dataset.group = group.id;
-      button.textContent = formatPillLabel(value, group.unit);
+      button.textContent = formatCompactPillText(group, value);
+      button.setAttribute('aria-label', buildAriaLabel(group, value));
       button.addEventListener('click', () => handlePrimaryAction(group, value));
       pillGrid.appendChild(button);
     });
@@ -153,7 +166,7 @@ function render(container) {
   SECONDARY_ACTIONS.forEach((action) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'quick-log__pill quick-log__pill--secondary card-hover card-press';
+    button.className = 'quick-log__pill quick-log__pill--secondary card-hover card-press pill--compact';
     button.dataset.actionId = action.id;
     button.addEventListener('click', () => handleSecondaryAction(action));
     button.innerHTML = `
@@ -250,13 +263,28 @@ function updateSummaries(db) {
 }
 
 function buildSummaryText(group, total, target) {
-  const formattedTotal = `${formatNumber(total)} ${group.unit}`;
-  if (!target) {
-    return `${group.summaryLabel}: ${formattedTotal}`;
+  const formattedValues = formatSummaryValues(group, total, target);
+  return `${group.label}: ${group.summaryLabel}: ${formattedValues}`;
+}
+
+function formatSummaryValues(group, total, target) {
+  if (group.id === 'water') {
+    const formattedTotal = literFormatter.format(total / 1000);
+    if (!(target > 0)) {
+      return `${formattedTotal}${group.summaryUnit}`;
+    }
+    const formattedTarget = literFormatter.format(target / 1000);
+    return `${formattedTotal} / ${formattedTarget}${group.summaryUnit}`;
   }
-  const formattedTarget = `${formatNumber(target)} ${group.unit}`;
-  const suffix = group.id === 'caffeine' ? 'ceiling' : 'target';
-  return `${group.summaryLabel}: ${formattedTotal} / ${formattedTarget} ${suffix}`;
+
+  const formattedTotal = integerFormatter.format(total);
+  const suffix = group.summaryUnit || '';
+  if (!(target > 0)) {
+    return suffix ? `${formattedTotal}${suffix}` : formattedTotal;
+  }
+  const formattedTarget = integerFormatter.format(target);
+  const values = `${formattedTotal} / ${formattedTarget}`;
+  return suffix ? `${values}${suffix}` : values;
 }
 
 function getQueueTotals(queue) {
@@ -268,13 +296,33 @@ function getQueueTotals(queue) {
   }, {});
 }
 
+function formatCompactPillText(group, value) {
+  const numericValue = Number(value || 0);
+  if (group.id === 'steps' && numericValue >= 1000) {
+    const scaled = numericValue / 1000;
+    const scaledLabel = Number.isInteger(scaled)
+      ? integerFormatter.format(scaled)
+      : scaled.toFixed(1).replace(/\.0$/, '');
+    return `+${scaledLabel}k`;
+  }
+  return `+${integerFormatter.format(numericValue)}`;
+}
+
+function buildAriaLabel(group, value) {
+  const numericValue = Number(value || 0);
+  const formattedValue = integerFormatter.format(numericValue);
+  const unit = group.ariaUnit || group.unit;
+  const label = group.label.toLowerCase();
+  return `Add ${formattedValue} ${unit} to ${label}`;
+}
+
 function formatPillLabel(value, unit) {
   const number = formatNumber(value);
   return `+${number} ${unit}`;
 }
 
 function formatNumber(value) {
-  return Number(value || 0).toLocaleString();
+  return integerFormatter.format(Number(value || 0));
 }
 
 function createState(data) {
