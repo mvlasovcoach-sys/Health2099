@@ -147,6 +147,7 @@ a:focus {
   text-decoration: underline;
 }
 
+.app,
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -156,9 +157,35 @@ a:focus {
   background-attachment: fixed;
 }
 
+.app.has-sidenav {
+  color: var(--color-text);
+}
+
+.app__grid {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.app__sidenav {
+  flex: 0 0 var(--sidebar-width);
+}
+
+.app__main {
+  flex: 1;
+  min-width: 0;
+}
+
 @media (min-width: 960px) {
+  .app,
   .app-shell {
     flex-direction: row;
+  }
+}
+
+@media (max-width: 959px) {
+  .app__grid {
+    flex-direction: column;
   }
 }
 

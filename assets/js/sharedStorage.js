@@ -21,44 +21,274 @@ const DEFAULT_DB = {
 };
 
 const listeners = new Set();
+
+let db = safeLoad();
+persist();
+
 const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(CHANNEL_NAME) : null;
 
 if (channel) {
   channel.addEventListener('message', (event) => {
-    if (event?.data?.type === 'sync') {
-      hydrate();
-      emit(event.data.payload);
+    if (event?.data?.type === 'db-updated') {
+      db = safeLoad();
+      notify(event?.data?.payload || null);
     }
   });
 }
 
-let db = hydrate();
+export const getDB = () => clone(db);
 
-function hydrate() {
-  let parsed;
+export function setDB(next, options = {}) {
+  const { payload = null, broadcast = true, skipNormalize = false } = options;
+  const prepared = skipNormalize ? next : prepareState(next || {});
+  db = prepared;
+  persist();
+  if (broadcast && channel) {
+    try {
+      channel.postMessage({ type: 'db-updated', payload });
+    } catch (error) {
+      console.warn('[sharedStorage] Failed to broadcast db update', error);
+    }
+  }
+  notify(payload);
+  return getDB();
+}
+
+export function listLogs({ type, limit, since } = {}) {
+  let items = [...db.logs];
+  if (type) {
+    items = items.filter((log) => log.type === type);
+  }
+  if (since) {
+    const sinceDate = new Date(since);
+    items = items.filter((log) => new Date(log.createdAt) >= sinceDate);
+  }
+  if (typeof limit === 'number') {
+    items = items.slice(0, limit);
+  }
+  return items;
+}
+
+export function pushLog(type, value, options = {}) {
+  const log = createLog(type, value, options);
+  const nextLogs = [log, ...db.logs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const nextSettings = { ...db.settings, lastDevicePingISO: log.createdAt };
+  write({ ...db, logs: nextLogs, settings: nextSettings }, { target: 'logs', action: 'push', log });
+  return log;
+}
+
+export function updateLog(id, updates) {
+  let updated = null;
+  const nextLogs = db.logs.map((log) => {
+    if (log.id !== id) return log;
+    updated = normalizeLog({ ...log, ...(updates || {}), updatedAt: new Date().toISOString() });
+    return updated;
+  });
+  if (updated) {
+    write({ ...db, logs: nextLogs }, { target: 'logs', action: 'update', log: updated });
+  }
+  return updated;
+}
+
+export function removeLog(id) {
+  const removed = db.logs.find((log) => log.id === id) || null;
+  if (!removed) return null;
+  const nextLogs = db.logs.filter((log) => log.id !== id);
+  write({ ...db, logs: nextLogs }, { target: 'logs', action: 'remove', log: removed });
+  return removed;
+}
+
+export function getTargets() {
+  return { ...db.targets };
+}
+
+export function setTargets(nextTargets) {
+  const targets = normalizeTargets({ ...db.targets, ...(nextTargets || {}) });
+  write({ ...db, targets }, { target: 'targets', action: 'set', targets: { ...targets } });
+  return getTargets();
+}
+
+export function getSettings() {
+  return { ...db.settings };
+}
+
+export function setSettings(partial) {
+  const settings = normalizeSettings({ ...db.settings, ...(partial || {}) });
+  write({ ...db, settings }, { target: 'settings', action: 'set', settings: { ...settings } });
+  return getSettings();
+}
+
+export function getMedsToday() {
+  return db.meds_today.map((med) => ({ ...med }));
+}
+
+export function setMedsToday(next) {
+  const meds = normalizeMeds(next);
+  write({ ...db, meds_today: meds }, { target: 'meds', action: 'set', meds: meds.map((item) => ({ ...item })) });
+  return getMedsToday();
+}
+
+export function updateMedToday(id, updates) {
+  let updated = null;
+  const meds = db.meds_today.map((med) => {
+    if (med.id !== id) return med;
+    updated = { ...med, ...(updates || {}) };
+    return updated;
+  });
+  if (updated) {
+    setMedsToday(meds);
+  }
+  return updated;
+}
+
+export function onChange(listener) {
+  if (typeof listener !== 'function') return () => {};
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function addQueue(action) {
+  const item = {
+    id: createId('queue'),
+    createdAt: new Date().toISOString(),
+    ...(action || {}),
+  };
+  const queue = [...db.queue, item];
+  write({ ...db, queue }, { target: 'queue', action: 'push', item });
+  return item;
+}
+
+export function flushQueue(flushFn) {
+  if (!db.queue.length) return Promise.resolve([]);
+  const items = [...db.queue];
+  write({ ...db, queue: [] }, { target: 'queue', action: 'flush' });
+  if (typeof flushFn === 'function') {
+    return Promise.resolve(flushFn(items));
+  }
+  return Promise.resolve(items);
+}
+
+export function removeQueue(predicate) {
+  if (typeof predicate !== 'function') return;
+  const queue = db.queue.filter((item) => !predicate(item));
+  write({ ...db, queue }, { target: 'queue', action: 'remove' });
+}
+
+export function recentLogs(hours = 24) {
+  const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
+  return listLogs({ since: cutoff.toISOString() });
+}
+
+export function aggregateDay(date = new Date()) {
+  const tz = getTimezone();
+  const start = startOfDay(date, tz);
+  const end = endOfDay(date, tz);
+  return aggregateRange(start, end);
+}
+
+export function aggregateRange(start, end) {
+  const result = {
+    water_ml: 0,
+    steps: 0,
+    sleep_min: 0,
+    caffeine_mg: 0,
+    meds_taken: 0,
+  };
+  const startTime = start.getTime();
+  const endTime = end.getTime();
+  db.logs.forEach((log) => {
+    const time = new Date(log.createdAt).getTime();
+    if (time < startTime || time > endTime) return;
+    switch (log.type) {
+      case 'water':
+        result.water_ml += log.value || 0;
+        break;
+      case 'steps':
+        result.steps += log.value || 0;
+        break;
+      case 'sleep':
+        result.sleep_min += log.value || 0;
+        break;
+      case 'caffeine':
+        result.caffeine_mg += log.value || 0;
+        break;
+      case 'med':
+        result.meds_taken += 1;
+        break;
+      default:
+        break;
+    }
+  });
+  return result;
+}
+
+export function streaks(days = 14) {
+  const dayMap = new Map();
+  const tz = getTimezone();
+  for (let i = 0; i < days; i += 1) {
+    const reference = new Date(Date.now() - i * 86400000);
+    const day = startOfDay(reference, tz);
+    const key = day.toISOString();
+    dayMap.set(key, aggregateDay(day));
+  }
+  return dayMap;
+}
+
+export function startOfDayISO(date = new Date(), tz = getTimezone()) {
+  return startOfDay(date, tz).toISOString();
+}
+
+export function createLog(type, value, options = {}) {
+  const now = new Date();
+  const tzOffset = now.getTimezoneOffset();
+  const iso = new Date(now.getTime() - tzOffset * 60000).toISOString();
+  const log = normalizeLog({
+    id: options.id,
+    type,
+    value,
+    unit: options.unit,
+    note: options.note || '',
+    createdAt: options.createdAt || iso,
+    updatedAt: options.updatedAt || iso,
+    source: options.source,
+  });
+  return log;
+}
+
+function safeLoad() {
+  const stored = readStorage();
+  return prepareState(stored);
+}
+
+function readStorage() {
+  if (typeof localStorage === 'undefined') {
+    return {};
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    parsed = raw ? JSON.parse(raw) : null;
-  } catch (err) {
-    console.warn('[sharedStorage] Failed to parse db', err);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    console.warn('[sharedStorage] Failed to read db', error);
+    return {};
   }
+}
 
-  const migrated = migrateSchema(parsed || {});
-  const next = mergeDeep({}, DEFAULT_DB, migrated);
-
-  next.logs = Array.isArray(next.logs)
-    ? next.logs
-        .filter((item) => item && (item.id || item.createdAt))
-        .map(normalizeLog)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    : [];
-  next.targets = normalizeTargets(next.targets);
-  next.meds_today = normalizeMeds(next.meds_today);
-  next.settings = normalizeSettings(next.settings);
-  next.queue = Array.isArray(next.queue) ? next.queue.filter(Boolean) : [];
-
-  db = next;
-  persist();
+function prepareState(source) {
+  const migrated = migrateSchema(source || {});
+  const base = mergeDeep({}, DEFAULT_DB, migrated);
+  const next = {
+    ...base,
+    logs: Array.isArray(base.logs)
+      ? base.logs
+          .filter((item) => item && (item.id || item.createdAt))
+          .map(normalizeLog)
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      : [],
+    targets: normalizeTargets(base.targets),
+    meds_today: normalizeMeds(base.meds_today),
+    settings: normalizeSettings(base.settings),
+    queue: Array.isArray(base.queue) ? base.queue.filter(Boolean) : [],
+  };
   return next;
 }
 
@@ -181,6 +411,9 @@ function normalizeSettings(settings) {
   } else {
     next.city = next.city.trim();
   }
+  if (typeof next.tz !== 'string' || !next.tz) {
+    next.tz = DEFAULT_DB.settings.tz;
+  }
   return next;
 }
 
@@ -212,40 +445,35 @@ function toNumber(value) {
   return Number.isFinite(num) ? num : null;
 }
 
-function persist() {
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        version: db.version,
-        logs: db.logs,
-        targets: db.targets,
-        meds_today: db.meds_today,
-        settings: db.settings,
-        queue: db.queue,
-      }),
-    );
-  } catch (err) {
-    console.warn('[sharedStorage] Failed to persist db', err);
-  }
+function write(nextState, payload) {
+  setDB(nextState, { payload });
 }
 
-function emit(payload) {
-  listeners.forEach((listener) => {
-    try {
-      listener(payload || {});
-    } catch (err) {
-      console.error(err);
-    }
-  });
+function persist(state = db) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const snapshot = {
+      version: state.version,
+      logs: state.logs,
+      targets: state.targets,
+      meds_today: state.meds_today,
+      settings: state.settings,
+      queue: state.queue,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+  } catch (error) {
+    console.warn('[sharedStorage] Failed to persist db', error);
+  }
 }
 
 function notify(payload) {
-  persist();
-  emit(payload);
-  if (channel) {
-    channel.postMessage({ type: 'sync', payload });
-  }
+  listeners.forEach((listener) => {
+    try {
+      listener(payload || null);
+    } catch (error) {
+      console.error('[sharedStorage] Listener error', error);
+    }
+  });
 }
 
 function getTimezone() {
@@ -253,216 +481,16 @@ function getTimezone() {
   if (tz) return tz;
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch (err) {
+  } catch (error) {
     return 'UTC';
   }
-}
-
-function createLog(type, value, options = {}) {
-  const now = new Date();
-  const tzOffset = now.getTimezoneOffset();
-  const iso = new Date(now.getTime() - tzOffset * 60000).toISOString();
-  const log = normalizeLog({
-    id: options.id,
-    type,
-    value,
-    unit: options.unit,
-    note: options.note || '',
-    createdAt: options.createdAt || iso,
-    updatedAt: options.updatedAt || iso,
-    source: options.source,
-  });
-  return log;
-}
-
-function pushLog(type, value, options = {}) {
-  const log = createLog(type, value, options);
-  db.logs = [log, ...db.logs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  db.settings.lastDevicePingISO = log.createdAt;
-  notify({ target: 'logs', action: 'push', log });
-  return log;
-}
-
-function updateLog(id, updates) {
-  let updated;
-  db.logs = db.logs.map((log) => {
-    if (log.id !== id) return log;
-    updated = { ...log, ...updates, updatedAt: new Date().toISOString() };
-    return normalizeLog(updated);
-  });
-  if (updated) {
-    notify({ target: 'logs', action: 'update', log: updated });
-  }
-  return updated;
-}
-
-function removeLog(id) {
-  const removed = db.logs.find((log) => log.id === id);
-  db.logs = db.logs.filter((log) => log.id !== id);
-  if (removed) {
-    notify({ target: 'logs', action: 'remove', log: removed });
-  }
-  return removed;
-}
-
-function listLogs({ type, limit, since } = {}) {
-  let items = [...db.logs];
-  if (type) {
-    items = items.filter((log) => log.type === type);
-  }
-  if (since) {
-    const sinceDate = new Date(since);
-    items = items.filter((log) => new Date(log.createdAt) >= sinceDate);
-  }
-  if (typeof limit === 'number') {
-    items = items.slice(0, limit);
-  }
-  return items;
-}
-
-function getTargets() {
-  return { ...db.targets };
-}
-
-function setTargets(nextTargets) {
-  db.targets = normalizeTargets({ ...db.targets, ...(nextTargets || {}) });
-  notify({ target: 'targets', action: 'set', targets: getTargets() });
-  return getTargets();
-}
-
-function getSettings() {
-  return { ...db.settings };
-}
-
-function setSettings(partial) {
-  db.settings = normalizeSettings({ ...db.settings, ...(partial || {}) });
-  notify({ target: 'settings', action: 'set', settings: getSettings() });
-  return getSettings();
-}
-
-function getMedsToday() {
-  return db.meds_today.map((med) => ({ ...med }));
-}
-
-function setMedsToday(next) {
-  db.meds_today = normalizeMeds(next);
-  notify({ target: 'meds', action: 'set', meds: getMedsToday() });
-  return getMedsToday();
-}
-
-function updateMedToday(id, updates) {
-  let updated;
-  db.meds_today = db.meds_today.map((med) => {
-    if (med.id !== id) return med;
-    updated = { ...med, ...(updates || {}) };
-    return updated;
-  });
-  if (updated) {
-    setMedsToday(db.meds_today);
-  }
-  return updated;
-}
-
-function onChange(listener) {
-  if (typeof listener !== 'function') return () => {};
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function addQueue(action) {
-  db.queue = [
-    ...db.queue,
-    {
-      id: createId('queue'),
-      createdAt: new Date().toISOString(),
-      ...action,
-    },
-  ];
-  notify({ target: 'queue', action: 'push' });
-}
-
-function flushQueue(flushFn) {
-  if (!db.queue.length) return Promise.resolve([]);
-  const items = [...db.queue];
-  db.queue = [];
-  notify({ target: 'queue', action: 'flush' });
-  if (typeof flushFn === 'function') {
-    return Promise.resolve(flushFn(items));
-  }
-  return Promise.resolve(items);
-}
-
-function removeQueue(predicate) {
-  if (typeof predicate !== 'function') return;
-  db.queue = db.queue.filter((item) => !predicate(item));
-  notify({ target: 'queue', action: 'remove' });
-}
-
-function recentLogs(hours = 24) {
-  const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-  return listLogs({ since: cutoff.toISOString() });
-}
-
-function aggregateDay(date = new Date()) {
-  const tz = getTimezone();
-  const start = startOfDay(date, tz);
-  const end = endOfDay(date, tz);
-  return aggregateRange(start, end);
-}
-
-function aggregateRange(start, end) {
-  const result = {
-    water_ml: 0,
-    steps: 0,
-    sleep_min: 0,
-    caffeine_mg: 0,
-    meds_taken: 0,
-  };
-  const startTime = start.getTime();
-  const endTime = end.getTime();
-  db.logs.forEach((log) => {
-    const time = new Date(log.createdAt).getTime();
-    if (time < startTime || time > endTime) return;
-    switch (log.type) {
-      case 'water':
-        result.water_ml += log.value || 0;
-        break;
-      case 'steps':
-        result.steps += log.value || 0;
-        break;
-      case 'sleep':
-        result.sleep_min += log.value || 0;
-        break;
-      case 'caffeine':
-        result.caffeine_mg += log.value || 0;
-        break;
-      case 'med':
-        result.meds_taken += 1;
-        break;
-      default:
-        break;
-    }
-  });
-  return result;
-}
-
-function streaks(days = 14) {
-  const dayMap = new Map();
-  const tz = getTimezone();
-  for (let i = 0; i < days; i += 1) {
-    const reference = new Date(Date.now() - i * 86400000);
-    const day = startOfDay(reference, tz);
-    const key = day.toISOString();
-    dayMap.set(key, aggregateDay(day));
-  }
-  return dayMap;
 }
 
 function startOfDay(date, tz = getTimezone()) {
   try {
     const parts = zonedParts(date, tz);
     return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 0, 0, 0, 0));
-  } catch (err) {
+  } catch (error) {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
     return d;
@@ -473,15 +501,11 @@ function endOfDay(date, tz = getTimezone()) {
   try {
     const parts = zonedParts(date, tz);
     return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 23, 59, 59, 999));
-  } catch (err) {
+  } catch (error) {
     const d = new Date(date);
     d.setHours(23, 59, 59, 999);
     return d;
   }
-}
-
-function startOfDayISO(date = new Date(), tz = getTimezone()) {
-  return startOfDay(date, tz).toISOString();
 }
 
 function zonedParts(date, tz) {
@@ -514,7 +538,23 @@ function zonedParts(date, tz) {
   return result;
 }
 
+function clone(value) {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(value);
+  }
+  return JSON.parse(JSON.stringify(value));
+}
+
+function createId(prefix = 'id') {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+}
+
 export const SharedStorage = {
+  getDB,
+  setDB,
   listLogs,
   pushLog,
   updateLog,
@@ -537,10 +577,3 @@ export const SharedStorage = {
   createLog,
   startOfDayISO,
 };
-
-function createId(prefix = 'id') {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
-}

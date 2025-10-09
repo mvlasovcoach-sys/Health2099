@@ -141,3 +141,14 @@ function friendlyMetricName(metric) {
       return metric.charAt(0).toUpperCase() + metric.slice(1);
   }
 }
+
+function ready(callback) {
+  if (typeof document === 'undefined') return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
+
+ready(initStreaks);
