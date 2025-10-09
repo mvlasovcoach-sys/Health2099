@@ -1409,6 +1409,16 @@ input[type='file'] {
   font-weight: 600;
 }
 
+.summary-sidebar .sidebar-section,
+.summary-sidebar .sidebar-section * {
+  text-align: left;
+}
+
+.pill {
+  width: auto;
+  max-width: 100%;
+}
+
 @media (max-width: 640px) {
   .app-main {
     padding: var(--space-4);
