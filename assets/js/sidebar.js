@@ -128,3 +128,14 @@ function createMedId() {
   }
   return `med_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
 }
+
+function ready(callback) {
+  if (typeof document === 'undefined') return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
+
+ready(initSidebar);

@@ -346,3 +346,14 @@ function caffeineTotalLabel(total, days) {
   const value = formatNumber(Math.round(total));
   return days > 1 ? `${value} mg across ${days} days` : `${value} mg consumed`;
 }
+
+function ready(callback) {
+  if (typeof document === 'undefined') return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
+
+ready(initHeroKpi);

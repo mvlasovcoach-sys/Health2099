@@ -130,3 +130,14 @@ function getTargetValue(id, targets, context) {
   }
 }
 
+function ready(callback) {
+  if (typeof document === 'undefined') return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
+
+ready(initKpi);
+

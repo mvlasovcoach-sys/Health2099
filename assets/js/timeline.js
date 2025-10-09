@@ -153,6 +153,17 @@ function attachEditable(element, field, log, container) {
   });
 }
 
+function ready(callback) {
+  if (typeof document === 'undefined') return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
+
+ready(initTimeline);
+
 function startInlineEdit(element, field, log, container) {
   if (element.dataset.editing === 'true') return;
   if (field === 'value' && log.value == null && log.type === 'note') {

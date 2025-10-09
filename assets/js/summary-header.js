@@ -98,3 +98,14 @@ function computeDeviceStatus(lastPing) {
   }
   return { color: 'red', label: 'Device status · Needs sync', icon: '🔴' };
 }
+
+function ready(callback) {
+  if (typeof document === 'undefined') return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
+
+ready(initHeader);

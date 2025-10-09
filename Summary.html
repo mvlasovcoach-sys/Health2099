@@ -13,17 +13,18 @@
     <link rel="stylesheet" href="./assets/css/ui.css?v=20240714" />
     <link rel="stylesheet" href="./assets/css/badges.css?v=20240714" />
   </head>
-  <body class="app-shell" data-page="summary">
-    <aside id="sidenav" class="sidebar" aria-label="Primary navigation"></aside>
-    <main class="app-main">
-      <div class="summary-viewport">
-        <section class="hero hero--summary rounded-3xl">
-          <div class="hero__overline">SUMMARY</div>
-          <h1 class="hero__title">Wellness snapshot</h1>
-          <p class="hero__subtitle">
-            Live overview of hydration, sleep, steps, caffeine and meds. Everything updates live across tabs.
-          </p>
-        </section>
+  <body class="app has-sidenav app-shell" data-page="summary">
+    <div class="app__grid">
+      <aside id="sidenav" class="sidebar app__sidenav" aria-label="Primary navigation"></aside>
+      <main class="app__main app-main">
+        <div class="summary-viewport">
+          <section class="hero">
+            <div class="hero__overline">SUMMARY</div>
+            <h1 class="hero__title">Wellness snapshot</h1>
+            <p class="hero__subtitle">
+              Live overview of hydration, sleep, steps, caffeine and meds. Everything updates live across tabs.
+            </p>
+          </section>
         <div class="summary-layout">
           <div class="summary-content">
             <header id="summary-header" class="summary-header" role="banner"></header>
@@ -99,8 +100,9 @@
         <footer class="summary-footer" role="contentinfo">
           Synced via shared storage · Broadcast ready
         </footer>
-      </div>
-    </main>
+        </div>
+      </main>
+    </div>
     <script src="./shared/storage.js" defer></script>
     <script src="./assets/js/includes.js" defer></script>
     <script type="module" src="./assets/js/summary-page.js?v=20240714"></script>

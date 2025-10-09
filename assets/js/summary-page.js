@@ -1,61 +1,26 @@
-import { withBase } from './path.js';
+import * as store from './sharedStorage.js';
+import './summary-header.js';
+import './sidebar.js';
+import './quick-actions.js';
+import './hero-kpi.js';
+import './kpi.js';
+import './timeline.js';
+import './insights.js';
+import './streaks.js';
+import './kpi-rings.js';
+import './dev-seed.js';
 
 function ready(callback) {
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    callback();
-  } else {
+  if (typeof document === 'undefined') return;
+  if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
   }
 }
 
-function loadModule(path) {
-  return import(withBase(path)).catch((error) => {
-    console.error(`Failed to load module ${path}`, error);
-    return null;
-  });
-}
-
-ready(async () => {
-  const [
-    sharedStorage,
-    headerModule,
-    heroModule,
-    kpiModule,
-    quickActionsModule,
-    timelineModule,
-    insightsModule,
-    streaksModule,
-    sidebarModule,
-    devSeedModule,
-    kpiRingsModule,
-  ] = await Promise.all([
-    loadModule('assets/js/sharedStorage.js'),
-    loadModule('assets/js/summary-header.js'),
-    loadModule('assets/js/hero-kpi.js'),
-    loadModule('assets/js/kpi.js'),
-    loadModule('assets/js/quick-actions.js'),
-    loadModule('assets/js/timeline.js'),
-    loadModule('assets/js/insights.js'),
-    loadModule('assets/js/streaks.js'),
-    loadModule('assets/js/sidebar.js'),
-    loadModule('assets/js/dev-seed.js'),
-    loadModule('assets/js/kpi-rings.js'),
-  ]);
-
-  if (!sharedStorage || !sharedStorage.SharedStorage) {
-    console.error('Shared storage module failed to load; page modules may not work correctly.');
-    return;
-  }
-
-  headerModule?.initHeader?.();
-  heroModule?.initHeroKpi?.();
-  kpiModule?.initKpi?.();
-  quickActionsModule?.initQuickActions?.();
-  timelineModule?.initTimeline?.();
-  insightsModule?.initInsights?.();
-  streaksModule?.initStreaks?.();
-  sidebarModule?.initSidebar?.();
-  devSeedModule?.initDevSeed?.();
-  kpiRingsModule?.initKpiRings?.();
+ready(() => {
+  if (typeof window === 'undefined') return;
+  window.Health2099 = window.Health2099 || {};
+  window.Health2099.store = store.SharedStorage || store;
 });
-
