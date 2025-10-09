@@ -49,6 +49,16 @@
 .quick-log {
   display: grid;
   gap: clamp(1rem, 1.5vw, 1.25rem);
+  min-height: auto;
+  height: auto;
+}
+
+.quick-log::after {
+  content: none;
+}
+
+.quick-log .card__body {
+  padding-bottom: 12px;
 }
 
 .quick-log__section {
@@ -173,6 +183,10 @@
   text-align: center;
   white-space: normal;
   height: auto;
+}
+
+.sidebar .card:last-child {
+  margin-bottom: 0;
 }
 
 .quick-log__links {
