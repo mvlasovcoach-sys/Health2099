@@ -9,7 +9,7 @@
 
 </head>
   <body class="app-shell" data-page="diary">
-    <div data-include="nav"></div>
+    <aside id="sidenav" class="sidebar" aria-label="Primary navigation"></aside>
     <main class="app-main">
       <div class="container flow">
         <header class="page-header">
@@ -79,9 +79,11 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="./shared/storage.js"></script>
-    <script src="./shared/nav-loader.js"></script>
-    <script>window.addEventListener('load',()=>console.log('TopBar type:', typeof window.H2099TopBar));</script>
+    <script src="./shared/storage.js" defer></script>
+    <script src="./assets/js/includes.js" defer></script>
+    <script>
+      window.addEventListener('load', () => console.log('TopBar type:', typeof window.H2099TopBar));
+    </script>
     <script>
       (function () {
         const form = document.getElementById('event-form');

@@ -213,7 +213,8 @@ a:focus {
   outline: none;
 }
 
-.nav-link.active {
+.nav-link.active,
+.nav-link.is-active {
   background: var(--color-nav-active-bg);
   border: 1px solid var(--color-nav-active-border);
   color: var(--color-nav-active-text);
