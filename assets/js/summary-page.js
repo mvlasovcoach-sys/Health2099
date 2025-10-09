@@ -2,11 +2,13 @@ import './sharedStorage.js';
 import './summary-header.js';
 import './sidebar.js';
 import './hero-kpi.js';
+import './morning.js';
 import './quick-actions.js';
 import './timeline.js';
 import './insights.js';
 import './streaks.js';
 import './dev-seed.js';
+import './diary-link.js';
 
 function ready(callback) {
   if (typeof document === 'undefined') return;

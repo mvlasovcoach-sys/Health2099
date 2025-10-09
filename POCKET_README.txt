@@ -4,7 +4,7 @@ Pocket Health Links
 Offline usage
 -------------
 
-1. Open each HTML file in your browser once while you are online (`pocket_health_link.html`, `Summary.html`, `DiaryPlus.html`).
+1. Open each HTML file in your browser once while you are online (`pocket_health_link.html`, `Summary.html`, `Diary.html`).
 2. Add them to your reading list or home screen; modern browsers will cache the assets for offline use.
 3. The app stores data in `localStorage`, so entries stay on the device even without connectivity.
 

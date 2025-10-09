@@ -5,7 +5,7 @@
    - Confirm navigation bar renders with Summary + Diary entries.
 2. **Add + sync**
    - On `Summary.html`, tap `+250 ml water` twice.
-   - Switch to `DiaryPlus.html` (same tab or a new one) and verify totals/cards reflect 500 ml water today.
+  - Switch to `Diary.html` (same tab or a new one) and verify totals/cards reflect 500 ml water today.
    - Edit the water entry value in the diary table; confirm the change appears back on Summary without reload.
 3. **Soft delete**
    - In the diary table delete the edited entry and confirm it disappears while the totals update.

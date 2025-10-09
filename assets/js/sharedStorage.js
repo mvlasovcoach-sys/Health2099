@@ -55,11 +55,14 @@ function sanitizeLog(log) {
 
 function createLog(log) {
   const iso = toISO(log.createdAt || log.ts);
+  const numericValue = toNumber(log.value);
   return {
     id: ensureId(log.id),
     type: log.type || 'note',
-    value: toNumber(log.value),
+    value: numericValue != null ? numericValue : log.value ?? null,
     note: typeof log.note === 'string' ? log.note : '',
+    unit: typeof log.unit === 'string' ? log.unit : null,
+    meta: log.meta && typeof log.meta === 'object' ? clone(log.meta) : null,
     createdAt: iso,
     updatedAt: toISO(log.updatedAt) || iso,
     source: log.source || null,
