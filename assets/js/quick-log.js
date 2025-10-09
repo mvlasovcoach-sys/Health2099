@@ -8,8 +8,6 @@ import {
   onQueueChange,
   onFlush,
 } from './offline-queue.js';
-import { openGoalsSheet, initGoalsSheet } from './goals-sheet.js';
-
 const TOAST_DURATION = 10000;
 
 const PRESETS = {
@@ -65,11 +63,6 @@ const GROUPS = [
   },
 ];
 
-const SECONDARY_ACTIONS = [
-  { id: 'meds', type: 'med', value: 1, unit: 'dose', label: 'Take meds', hint: 'Mark taken' },
-  { id: 'note', type: 'note', value: null, unit: null, label: 'Add note', hint: 'Remember this' },
-];
-
 const summaryRefs = new Map();
 const pendingStates = new Map();
 const queueLookup = new Map();
@@ -83,17 +76,11 @@ let unsubscribeFlush = null;
 
 export function initQuickLog() {
   const container = document.getElementById('quick-log');
-  const editGoals = document.getElementById('edit-goals');
   if (!container) return;
 
-  initGoalsSheet();
   render(container);
   lastDB = getDB();
   updateSummaries(lastDB);
-
-  if (editGoals) {
-    editGoals.addEventListener('click', () => openGoalsSheet());
-  }
 
   if (typeof unsubscribeStore === 'function') {
     unsubscribeStore();
@@ -133,29 +120,28 @@ function render(container) {
 
   GROUPS.forEach((group) => {
     const section = document.createElement('section');
-    section.className = 'quick-log__section';
+    section.className = 'ql-section';
     section.dataset.group = group.id;
 
     const header = document.createElement('div');
-    header.className = 'quick-log__section-header';
+    header.className = 'ql-head';
 
     const title = document.createElement('h4');
-    title.className = 'quick-log__section-title';
     title.textContent = group.label;
     header.appendChild(title);
 
-    const summary = document.createElement('p');
-    summary.className = 'quick-log__summary';
+    const summary = document.createElement('div');
+    summary.className = 'ql-meta';
     summary.dataset.summaryFor = group.id;
     header.appendChild(summary);
     section.appendChild(header);
 
     const pillGrid = document.createElement('div');
-    pillGrid.className = 'quick-log__pills pill-row';
+    pillGrid.className = 'pill-row';
     (PRESETS[group.id] || []).forEach((value) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'quick-log__pill card-hover card-press pill--compact';
+      button.className = 'pill card-hover card-press';
       button.dataset.value = String(value);
       button.dataset.group = group.id;
       button.textContent = formatPillDisplay(value);
@@ -168,22 +154,6 @@ function render(container) {
     summaryRefs.set(group.id, summary);
     container.appendChild(section);
   });
-
-  const secondary = document.createElement('div');
-  secondary.className = 'quick-log__secondary';
-  SECONDARY_ACTIONS.forEach((action) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'quick-log__pill quick-log__pill--secondary card-hover card-press';
-    button.dataset.actionId = action.id;
-    button.addEventListener('click', () => handleSecondaryAction(action));
-    button.innerHTML = `
-      <span class="quick-log__pill-label">${action.label}</span>
-      <span class="quick-log__pill-hint">${action.hint}</span>
-    `;
-    secondary.appendChild(button);
-  });
-  container.appendChild(secondary);
 }
 
 function handlePrimaryAction(group, value) {
@@ -212,29 +182,6 @@ function handlePrimaryAction(group, value) {
     onUndo: () => handleUndo(state.id),
   });
   scheduleCleanup(state.id);
-}
-
-function handleSecondaryAction(action) {
-  if (action.type === 'note') {
-    const note = window.prompt('Add note');
-    if (!note) return;
-    const trimmed = note.trim();
-    if (!trimmed) return;
-    const log = pushLog({ type: 'note', value: null, unit: null, note: trimmed, source: 'quick' });
-    showToast('Added note', {
-      undoLabel: 'Undo',
-      duration: TOAST_DURATION,
-      onUndo: () => removeLog(log.id),
-    });
-    return;
-  }
-
-  const log = pushLog({ type: action.type, value: action.value, unit: action.unit, source: 'quick' });
-  showToast('Added meds', {
-    undoLabel: 'Undo',
-    duration: TOAST_DURATION,
-    onUndo: () => removeLog(log.id),
-  });
 }
 
 function handleUndo(stateId) {
