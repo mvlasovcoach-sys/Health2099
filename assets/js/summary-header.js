@@ -1,4 +1,5 @@
-import { SharedStorage } from './sharedStorage.js';
+import { onChange } from './sharedStorage.js';
+import { getSettings } from './data-layer.js';
 import { formatDateRange } from './utils.js';
 
 const HEADER_ID = 'summary-header';
@@ -54,7 +55,7 @@ export function initHeader() {
 
   function render() {
     ensureStructure();
-    const settings = SharedStorage.getSettings();
+    const settings = getSettings();
     const now = new Date();
     const dateLabel = formatDateRange(now);
     const city = settings.city ? ` · ${settings.city}` : '';
@@ -78,11 +79,7 @@ export function initHeader() {
   }
 
   render();
-  SharedStorage.onChange((payload) => {
-    if (!payload || payload.target === 'logs' || payload.target === 'settings') {
-      render();
-    }
-  });
+  onChange(render);
 }
 
 function computeDeviceStatus(lastPing) {

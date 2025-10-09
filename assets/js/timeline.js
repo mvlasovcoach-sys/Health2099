@@ -1,4 +1,5 @@
-import { SharedStorage } from './sharedStorage.js';
+import { listLogs, pushLog, updateLog, onChange } from './sharedStorage.js';
+import { startOfDayISO } from './data-layer.js';
 import { iconForType, formatTime, isoToDate, unitLabel, formatNumber, pluralize } from './utils.js';
 
 const TIMELINE_LIST_ID = 'timeline-list';
@@ -22,11 +23,7 @@ export function initTimeline() {
   setupFilters(filtersHost, () => render(list, headerCount, heading));
   render(list, headerCount, heading);
 
-  SharedStorage.onChange((payload) => {
-    if (!payload || payload.target === 'logs' || payload.target === 'queue') {
-      render(list, headerCount, heading);
-    }
-  });
+  onChange(() => render(list, headerCount, heading));
 }
 
 function render(list, headerCount, heading) {
@@ -68,12 +65,12 @@ function updateFilterState(container) {
 
 function getLogsForRange(range) {
   const now = new Date();
-  let since = SharedStorage.startOfDayISO(now);
+  let since = startOfDayISO(now);
   if (range.days > 1) {
     const sinceDate = new Date(now.getTime() - (range.days - 1) * 86400000);
-    since = SharedStorage.startOfDayISO(sinceDate);
+    since = startOfDayISO(sinceDate);
   }
-  return SharedStorage.listLogs({ since });
+  return listLogs({ since });
 }
 
 function renderTimeline(list, logs, range) {
@@ -85,7 +82,7 @@ function renderTimeline(list, logs, range) {
     list.appendChild(empty);
     const button = document.getElementById('timeline-empty-add');
     if (button) {
-      button.addEventListener('click', () => SharedStorage.pushLog('water', 250));
+      button.addEventListener('click', () => pushLog({ type: 'water', value: 250 }));
     }
     return;
   }
@@ -199,7 +196,7 @@ function startInlineEdit(element, field, log, container) {
         updateFieldDisplay(element, log, field);
         return;
       }
-      const updated = SharedStorage.updateLog(log.id, updates) || { ...log, ...updates };
+      const updated = updateLog(log.id, updates) || { ...log, ...updates };
       Object.assign(log, updated);
       element.dataset.editing = 'false';
       element.innerHTML = '';

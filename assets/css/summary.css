@@ -46,6 +46,22 @@ body[data-page='summary'] {
   overflow: hidden;
 }
 
+.hero--compact {
+  padding: clamp(16px, 3vw, 32px) clamp(16px, 3vw, 32px);
+  min-height: unset;
+}
+
+.hero--compact .hero__title {
+  font-size: clamp(28px, 3.2vw, 44px);
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+
+.hero--compact .hero__subtitle {
+  max-width: 72ch;
+  opacity: 0.9;
+}
+
 .hero::after {
   content: '';
   position: absolute;

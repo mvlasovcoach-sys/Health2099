@@ -68,16 +68,13 @@
 
   function highlightActive(container) {
     if (!container || typeof document === 'undefined') return;
-    const path = (window.location?.pathname || '').toLowerCase();
+    const file = (window.location?.pathname || '').split('/').pop().toLowerCase();
+    const route = (file || 'index.html').replace('.html', '');
+    const normalizedRoute = route === 'diaryplus' ? 'diary' : route;
     container.querySelectorAll('a[data-route]').forEach((link) => {
-      const route = link.dataset.route ? link.dataset.route.toLowerCase() : '';
-      const isActive = route && path.includes(route);
-      link.classList.toggle('is-active', Boolean(isActive));
-      if (isActive) {
-        link.setAttribute('aria-current', 'page');
-      } else {
-        link.removeAttribute('aria-current');
-      }
+      const isActive = (link.dataset.route || '').toLowerCase() === normalizedRoute;
+      link.classList.toggle('is-active', isActive);
+      link.toggleAttribute('aria-current', isActive);
     });
   }
 
