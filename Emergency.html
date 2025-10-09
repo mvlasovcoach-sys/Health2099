@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Emergency</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+  </head>
+  <body class="app-shell" data-page="emergency">
+    <aside id="sidenav" class="sidebar" aria-label="Primary navigation"></aside>
+    <main class="app-main">
+      <div class="container flow">
+        <section class="card hero">
+          <h2>Emergency</h2>
+          <p>Keep critical health details ready for responders and close contacts.</p>
+        </section>
+
+        <section class="card stack">
+          <h3>ICE card</h3>
+          <div class="calibration-grid">
+            <label class="form-field">
+              <span>Name</span>
+              <input class="input" type="text" name="ice-name" placeholder="Jane Cooper" />
+            </label>
+            <label class="form-field">
+              <span>ICE contact</span>
+              <input class="input" type="tel" name="ice-contact" placeholder="+1 (555) 123-4567" />
+            </label>
+            <label class="form-field">
+              <span>Allergies</span>
+              <textarea class="input" name="ice-allergies" rows="3" placeholder="Penicillin, tree nuts"></textarea>
+            </label>
+            <label class="form-field">
+              <span>Meds snapshot</span>
+              <textarea class="input" name="ice-meds" rows="3" placeholder="Metformin 500mg, Lisinopril 10mg"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="card stack">
+          <h3>Quick actions</h3>
+          <div class="button-row">
+            <button class="btn btn--primary" type="button">Show large QR</button>
+            <button class="btn btn--ghost" type="button">Download PDF</button>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script src="./assets/js/includes.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+  </head>
+  <body class="app-shell" data-page="settings">
+    <aside id="sidenav" class="sidebar" aria-label="Primary navigation"></aside>
+    <main class="app-main">
+      <div class="container flow">
+        <section class="card hero">
+          <h2>Settings</h2>
+          <p>Adjust your profile, preferences and privacy in one place.</p>
+        </section>
+
+        <section class="card stack">
+          <h3>Profile</h3>
+          <div class="calibration-grid">
+            <label class="form-field">
+              <span>Name</span>
+              <input class="input" type="text" name="profile-name" placeholder="Jane Cooper" />
+            </label>
+            <label class="form-field">
+              <span>Timezone</span>
+              <select class="input" name="profile-timezone">
+                <option value="utc-5">UTC-05:00 Eastern</option>
+                <option value="utc-8">UTC-08:00 Pacific</option>
+                <option value="utc+1">UTC+01:00 Central Europe</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Theme</span>
+              <select class="input" name="profile-theme">
+                <option value="system">System default</option>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="card stack">
+          <h3>Goals</h3>
+          <p class="muted">Tune your daily targets for smarter nudges.</p>
+          <div class="calibration-grid">
+            <div class="stack">
+              <span class="muted">Water</span>
+              <div class="chip-row" role="group" aria-label="Water goal presets">
+                <button class="chip active" type="button">2.5 L</button>
+                <button class="chip" type="button">3.0 L</button>
+                <button class="chip" type="button">Custom</button>
+              </div>
+            </div>
+            <div class="stack">
+              <span class="muted">Steps</span>
+              <div class="chip-row" role="group" aria-label="Step goal presets">
+                <button class="chip active" type="button">10k</button>
+                <button class="chip" type="button">12k</button>
+                <button class="chip" type="button">Custom</button>
+              </div>
+            </div>
+            <div class="stack">
+              <span class="muted">Caffeine</span>
+              <div class="chip-row" role="group" aria-label="Caffeine goal presets">
+                <button class="chip active" type="button">200 mg</button>
+                <button class="chip" type="button">300 mg</button>
+                <button class="chip" type="button">Off</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card stack">
+          <h3>Notifications</h3>
+          <p class="muted">Select the reminders you want to receive.</p>
+          <label class="toggle">
+            <input type="checkbox" checked />
+            Water intake reminders
+          </label>
+          <label class="toggle">
+            <input type="checkbox" />
+            Medication reminders
+          </label>
+          <label class="toggle">
+            <input type="checkbox" checked />
+            Step cadence nudges
+          </label>
+        </section>
+
+        <section class="card stack">
+          <h3>Privacy &amp; data</h3>
+          <p class="muted">Control exports or wipe this device&#39;s local copy.</p>
+          <div class="button-row">
+            <button class="btn btn--ghost" type="button">Export data</button>
+            <button class="btn" type="button">Clear local data</button>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script src="./assets/js/includes.js" defer></script>
+  </body>
+</html>

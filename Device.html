@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Device</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+  </head>
+  <body class="app-shell" data-page="device">
+    <aside id="sidenav" class="sidebar" aria-label="Primary navigation"></aside>
+    <main class="app-main">
+      <div class="container flow">
+        <section class="card hero">
+          <h2>Device</h2>
+          <p>Manage connected sources, sync status and calibration.</p>
+        </section>
+
+        <div class="section-grid section-grid--two">
+          <section class="card stack">
+            <h3>Connected sources</h3>
+            <ul class="panel-list device-sources">
+              <li class="panel-list__item">
+                <div class="device-source__info">
+                  <span class="device-source__name">WearOS</span>
+                  <div class="device-source__meta">
+                    <span>Status: Online</span>
+                    <span>Last sync: 2 minutes ago</span>
+                    <span>Battery: 78%</span>
+                  </div>
+                </div>
+                <span class="status-pill status-pill--online">Online</span>
+              </li>
+              <li class="panel-list__item">
+                <div class="device-source__info">
+                  <span class="device-source__name">Apple Health</span>
+                  <div class="device-source__meta">
+                    <span>Status: Online</span>
+                    <span>Last sync: 5 minutes ago</span>
+                    <span>Battery: 92%</span>
+                  </div>
+                </div>
+                <span class="status-pill status-pill--online">Online</span>
+              </li>
+              <li class="panel-list__item">
+                <div class="device-source__info">
+                  <span class="device-source__name">Google Fit</span>
+                  <div class="device-source__meta">
+                    <span>Status: Offline</span>
+                    <span>Last sync: Yesterday, 22:14</span>
+                    <span>Battery: 41%</span>
+                  </div>
+                </div>
+                <span class="status-pill status-pill--offline">Offline</span>
+              </li>
+              <li class="panel-list__item">
+                <div class="device-source__info">
+                  <span class="device-source__name">Manual</span>
+                  <div class="device-source__meta">
+                    <span>Status: Manual input</span>
+                    <span>Last sync: 3 days ago</span>
+                    <span>Battery: —</span>
+                  </div>
+                </div>
+                <span class="status-pill status-pill--manual">Manual</span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="card stack">
+            <h3>Controls</h3>
+            <div class="button-row">
+              <button class="btn btn--primary" type="button">Resync now</button>
+              <button class="btn btn--ghost" type="button">Background sync ⏼</button>
+            </div>
+            <div class="stack">
+              <span class="muted">Units</span>
+              <div class="chip-row" role="group" aria-label="Preferred measurement units">
+                <button class="chip active" type="button">ml/L</button>
+                <button class="chip" type="button">mg</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="card stack">
+          <h3>Calibration</h3>
+          <form class="calibration-grid" action="#" method="post">
+            <label class="form-field">
+              <span>Height</span>
+              <input class="input" type="number" name="height" placeholder="cm" min="0" />
+            </label>
+            <label class="form-field">
+              <span>Weight</span>
+              <input class="input" type="number" name="weight" placeholder="kg" min="0" />
+            </label>
+            <label class="form-field">
+              <span>Stride length</span>
+              <input class="input" type="number" name="stride" placeholder="cm" min="0" />
+            </label>
+          </form>
+        </section>
+
+        <section class="card stack">
+          <h3>Sync logs</h3>
+          <div class="table-wrapper" role="region" aria-label="Latest sync attempts">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Time</th>
+                  <th scope="col">Source</th>
+                  <th scope="col">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>2024-07-16 09:42</td><td>WearOS</td><td>Success</td></tr>
+                <tr><td>2024-07-16 09:17</td><td>Apple Health</td><td>Success</td></tr>
+                <tr><td>2024-07-16 08:58</td><td>Google Fit</td><td>Timeout</td></tr>
+                <tr><td>2024-07-16 08:40</td><td>Manual</td><td>Updated hydration</td></tr>
+                <tr><td>2024-07-16 08:10</td><td>WearOS</td><td>Success</td></tr>
+                <tr><td>2024-07-16 07:55</td><td>Apple Health</td><td>Success</td></tr>
+                <tr><td>2024-07-16 07:32</td><td>Google Fit</td><td>Auth required</td></tr>
+                <tr><td>2024-07-16 06:58</td><td>WearOS</td><td>Success</td></tr>
+                <tr><td>2024-07-16 06:11</td><td>Apple Health</td><td>Success</td></tr>
+                <tr><td>2024-07-16 05:42</td><td>Manual</td><td>Logged caffeine</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script src="./assets/js/includes.js" defer></script>
+  </body>
+</html>

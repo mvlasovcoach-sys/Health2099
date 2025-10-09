@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Doctor</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+    <link rel="stylesheet" href="./assets/css/modal.css" />
+  </head>
+  <body class="app-shell" data-page="doctor">
+    <aside id="sidenav" class="sidebar" aria-label="Primary navigation"></aside>
+    <main class="app-main">
+      <div class="container flow">
+        <section class="card hero">
+          <h2>Doctor</h2>
+          <p>Share progress summaries and control how your clinician views your data.</p>
+        </section>
+
+        <div class="section-grid section-grid--two">
+          <section class="card stack">
+            <h3>Share access</h3>
+            <p class="muted">Create a secure link to provide your doctor with temporary dashboard access.</p>
+            <div class="button-row">
+              <button class="btn btn--primary" type="button">Generate link</button>
+              <button class="btn btn--ghost" type="button">Copy</button>
+            </div>
+          </section>
+
+          <section class="card stack">
+            <h3>Report template</h3>
+            <p class="muted">Choose the snapshot your doctor receives by default.</p>
+            <div class="chip-row" role="group" aria-label="Report range">
+              <button class="chip active" type="button">7 days</button>
+              <button class="chip" type="button">30 days</button>
+            </div>
+            <ul class="simple-list" aria-label="Metrics included">
+              <li>Hydration trend</li>
+              <li>Daily steps</li>
+              <li>Resting heart rate</li>
+              <li>Sleep duration</li>
+              <li>Caffeine intake</li>
+            </ul>
+          </section>
+        </div>
+
+        <div class="section-grid section-grid--two">
+          <section class="card stack">
+            <h3>Export</h3>
+            <p class="muted">Download or share recent health summaries in a single tap.</p>
+            <div class="button-row">
+              <button class="btn btn--primary" type="button">PDF</button>
+              <button class="btn btn--ghost" type="button">CSV</button>
+              <button class="btn" type="button">View link</button>
+            </div>
+          </section>
+
+          <section class="card stack">
+            <h3>Scheduled email</h3>
+            <p class="muted">Send automatic updates directly to your doctor.</p>
+            <label class="toggle">
+              <input type="checkbox" checked />
+              Weekly digest
+            </label>
+            <label class="form-field">
+              <span>Doctor email</span>
+              <input class="input" type="email" name="doctor-email" placeholder="doctor@clinic.io" />
+            </label>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <div id="pro-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pro-modal-title">
+      <div class="modal__box">
+        <h3 id="pro-modal-title">Pro feature</h3>
+        <p>Doctor/Programs are available on Pro. Start trial?</p>
+        <div class="modal__actions">
+          <button id="pro-start" class="btn btn--primary" type="button">Start trial</button>
+          <button id="pro-later" class="btn" type="button">Maybe later</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./assets/js/includes.js" defer></script>
+    <script type="module">
+      import { requireProOrRedirect } from './assets/js/gating.js';
+
+      requireProOrRedirect();
+    </script>
+  </body>
+</html>
