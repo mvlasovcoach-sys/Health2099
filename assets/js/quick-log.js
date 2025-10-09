@@ -18,6 +18,26 @@ const PRESETS = {
   caffeine: [50, 100],
 };
 
+const SUMMARY_FORMAT = {
+  water: {
+    formatter: new Intl.NumberFormat(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    transform: (value) => Number(value || 0) / 1000,
+    suffix: 'L',
+  },
+  steps: {
+    formatter: new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }),
+    transform: (value) => Number(value || 0),
+    suffix: '',
+  },
+  caffeine: {
+    formatter: new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }),
+    transform: (value) => Number(value || 0),
+    suffix: 'mg',
+  },
+};
+
+const ariaFormat = new Intl.NumberFormat();
+
 const GROUPS = [
   {
     id: 'water',
@@ -131,14 +151,15 @@ function render(container) {
     section.appendChild(header);
 
     const pillGrid = document.createElement('div');
-    pillGrid.className = 'quick-log__pills';
+    pillGrid.className = 'quick-log__pills pill-row';
     (PRESETS[group.id] || []).forEach((value) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'quick-log__pill card-hover card-press';
+      button.className = 'quick-log__pill card-hover card-press pill--compact';
       button.dataset.value = String(value);
       button.dataset.group = group.id;
-      button.textContent = formatPillLabel(value, group.unit);
+      button.textContent = formatPillDisplay(value);
+      button.setAttribute('aria-label', buildAriaLabel(group, value));
       button.addEventListener('click', () => handlePrimaryAction(group, value));
       pillGrid.appendChild(button);
     });
@@ -185,7 +206,7 @@ function handlePrimaryAction(group, value) {
   }
 
   updateSummaries(lastDB);
-  showToast(`Added ${formatPillLabel(value, group.unit)}`, {
+  showToast(`Added ${formatPillAnnouncement(value, group.unit)}`, {
     undoLabel: 'Undo',
     duration: TOAST_DURATION,
     onUndo: () => handleUndo(state.id),
@@ -250,13 +271,14 @@ function updateSummaries(db) {
 }
 
 function buildSummaryText(group, total, target) {
-  const formattedTotal = `${formatNumber(total)} ${group.unit}`;
+  const config = SUMMARY_FORMAT[group.id] || SUMMARY_FORMAT.steps;
+  const formattedTotal = config.formatter.format(config.transform(total));
+  const suffix = config.suffix ? ` ${config.suffix}` : '';
   if (!target) {
-    return `${group.summaryLabel}: ${formattedTotal}`;
+    return `${group.label}: ${group.summaryLabel}: ${formattedTotal}${suffix}`;
   }
-  const formattedTarget = `${formatNumber(target)} ${group.unit}`;
-  const suffix = group.id === 'caffeine' ? 'ceiling' : 'target';
-  return `${group.summaryLabel}: ${formattedTotal} / ${formattedTarget} ${suffix}`;
+  const formattedTarget = config.formatter.format(config.transform(target));
+  return `${group.label}: ${group.summaryLabel}: ${formattedTotal} / ${formattedTarget}${suffix}`;
 }
 
 function getQueueTotals(queue) {
@@ -268,13 +290,41 @@ function getQueueTotals(queue) {
   }, {});
 }
 
-function formatPillLabel(value, unit) {
-  const number = formatNumber(value);
-  return `+${number} ${unit}`;
-}
-
 function formatNumber(value) {
   return Number(value || 0).toLocaleString();
+}
+
+function formatPillDisplay(value) {
+  if (value >= 1000 && value % 1000 === 0) {
+    const compact = value / 1000;
+    return `+${Number(compact.toFixed(1)).toString().replace(/\.0$/, '')}k`;
+  }
+  return `+${formatNumber(value)}`;
+}
+
+function formatPillAnnouncement(value, unit) {
+  return `+${formatNumber(value)} ${unit}`;
+}
+
+function buildAriaLabel(group, value) {
+  const unitNames = {
+    water: 'milliliters',
+    steps: 'steps',
+    caffeine: 'milligrams',
+  };
+  const targets = {
+    water: 'water',
+    steps: 'your steps',
+    caffeine: 'your caffeine total',
+  };
+  const connectors = {
+    water: 'of',
+  };
+  const amount = ariaFormat.format(value);
+  const unit = unitNames[group.id] || group.unit;
+  const connector = connectors[group.id] || 'to';
+  const target = targets[group.id] || group.label.toLowerCase();
+  return `Add ${amount} ${unit} ${connector} ${target}`;
 }
 
 function createState(data) {
