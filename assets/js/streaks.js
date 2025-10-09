@@ -1,4 +1,5 @@
-import { SharedStorage } from './sharedStorage.js';
+import { getTargets, onChange } from './sharedStorage.js';
+import { streaks } from './data-layer.js';
 import { minutesToHours, formatNumber } from './utils.js';
 
 let lastStreaks = { water_ml: 0, steps: 0, sleep_min: 0 };
@@ -9,8 +10,8 @@ export function initStreaks() {
   if (!list || !badgeContainer) return;
 
   function render() {
-    const targets = SharedStorage.getTargets();
-    const streakMap = SharedStorage.streaks(14);
+    const targets = getTargets();
+    const streakMap = streaks(14);
     const entries = Array.from(streakMap.entries());
     const metrics = [
       {
@@ -72,11 +73,7 @@ export function initStreaks() {
   }
 
   render();
-  SharedStorage.onChange((payload) => {
-    if (!payload || payload.target === 'logs' || payload.target === 'targets') {
-      render();
-    }
-  });
+  onChange(render);
 }
 
 function computeStreak(entries, metric, target) {

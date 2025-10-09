@@ -1,13 +1,11 @@
-import * as store from './sharedStorage.js';
+import './sharedStorage.js';
 import './summary-header.js';
 import './sidebar.js';
-import './quick-actions.js';
 import './hero-kpi.js';
-import './kpi.js';
+import './quick-actions.js';
 import './timeline.js';
 import './insights.js';
 import './streaks.js';
-import './kpi-rings.js';
 import './dev-seed.js';
 
 function ready(callback) {
@@ -19,8 +17,10 @@ function ready(callback) {
   }
 }
 
-ready(() => {
+ready(async () => {
   if (typeof window === 'undefined') return;
+  await import('./includes.js');
+  const module = await import('./sharedStorage.js');
   window.Health2099 = window.Health2099 || {};
-  window.Health2099.store = store.SharedStorage || store;
+  window.Health2099.store = module;
 });

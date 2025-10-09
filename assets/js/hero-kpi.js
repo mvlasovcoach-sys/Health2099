@@ -1,4 +1,5 @@
-import { SharedStorage } from './sharedStorage.js';
+import { getTargets, onChange } from './sharedStorage.js';
+import { aggregateRange, getSettings } from './data-layer.js';
 import { badgeLabel, formatNumber, minutesToHours, percent, statusFromRules } from './utils.js';
 
 const HERO_ID = 'hero-kpi';
@@ -114,8 +115,8 @@ export function initHeroKpi() {
     const currentCaption = container.querySelector('#hero-kpi-caption');
     const tz = resolveTimezone();
     const range = resolveRange(state.range, tz);
-    const totals = SharedStorage.aggregateRange(range.start, range.end);
-    const targets = SharedStorage.getTargets();
+    const totals = aggregateRange(range.start, range.end);
+    const targets = getTargets();
 
     const metricPayloads = METRICS.map((metric) => {
       const total = totals[metric.totalKey] || 0;
@@ -151,7 +152,7 @@ export function initHeroKpi() {
     const previousRange = resolvePreviousRange(range, tz);
     let deltaInfo = null;
     if (previousRange) {
-      const previousTotals = SharedStorage.aggregateRange(previousRange.start, previousRange.end);
+      const previousTotals = aggregateRange(previousRange.start, previousRange.end);
       const previousCompletions = METRICS.map((metric) => {
         const total = previousTotals[metric.totalKey] || 0;
         const dailyTarget = targets[metric.targetKey] || 0;
@@ -234,15 +235,11 @@ export function initHeroKpi() {
   updateFilters(state.range);
   render();
 
-  SharedStorage.onChange((payload) => {
-    if (!payload || ['logs', 'targets', 'settings'].includes(payload.target)) {
-      render();
-    }
-  });
+  onChange(render);
 }
 
 function resolveTimezone() {
-  const settings = SharedStorage.getSettings();
+  const settings = getSettings();
   return settings?.tz || 'Europe/Amsterdam';
 }
 

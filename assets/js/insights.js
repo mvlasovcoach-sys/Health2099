@@ -1,4 +1,5 @@
-import { SharedStorage } from './sharedStorage.js';
+import { getTargets, onChange } from './sharedStorage.js';
+import { aggregateDay } from './data-layer.js';
 import { percent, formatNumber } from './utils.js';
 
 export function initInsights() {
@@ -26,19 +27,15 @@ export function initInsights() {
   }
 
   render();
-  SharedStorage.onChange((payload) => {
-    if (!payload || payload.target === 'logs' || payload.target === 'targets') {
-      render();
-    }
-  });
+  onChange(render);
 }
 
 function computeInsights() {
   const insights = [];
   const now = new Date();
   const hour = now.getHours();
-  const today = SharedStorage.aggregateDay(now);
-  const targets = SharedStorage.getTargets();
+  const today = aggregateDay(now);
+  const targets = getTargets();
 
   const waterTarget = targets.water_ml || 0;
   const waterPct = waterTarget ? percent(today.water_ml, waterTarget) : 0;

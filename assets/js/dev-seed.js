@@ -1,4 +1,5 @@
-import { SharedStorage } from './sharedStorage.js';
+import { pushLog } from './sharedStorage.js';
+import { setSettings, setMedsToday } from './data-layer.js';
 
 export function initDevSeed() {
   const button = document.getElementById('seed-demo');
@@ -19,14 +20,19 @@ export function initDevSeed() {
       });
     }
     entries.forEach((entry) => {
-      SharedStorage.pushLog(entry.type, entry.value, { createdAt: entry.createdAt, note: entry.note });
+      pushLog({
+        type: entry.type,
+        value: entry.value,
+        note: entry.note,
+        createdAt: entry.createdAt,
+      });
     });
-    SharedStorage.setSettings({
+    setSettings({
       city: 'Amsterdam',
       batteryPct: 82,
       lastDevicePingISO: new Date().toISOString(),
     });
-    SharedStorage.setMedsToday([
+    setMedsToday([
       { id: 'med_demo_1', title: 'Morning med', taken: true },
       { id: 'med_demo_2', title: 'Evening med', taken: false },
     ]);

@@ -1,4 +1,4 @@
-import { SharedStorage } from './sharedStorage.js';
+import { pushLog, removeLog } from './sharedStorage.js';
 import { showToast } from './ui.js';
 
 const TOAST_DURATION = 10000;
@@ -30,8 +30,6 @@ export function initQuickActions() {
     container.appendChild(button);
   });
 
-  window.addEventListener('online', flushQueue);
-  flushQueue();
 }
 
 function handleAction(action) {
@@ -47,42 +45,16 @@ function handleAction(action) {
 }
 
 function performLogAction(action, extras = {}) {
-  const payload = {
-    type: action.type,
-    value: action.value,
-    note: extras.note || null,
-  };
-
-  const offline = navigator.onLine === false;
-  let log;
-  if (offline) {
-    log = SharedStorage.pushLog(payload.type, payload.value, {
-      note: payload.note,
-      source: 'offline',
-    });
-    SharedStorage.addQueue({ kind: 'log-sync', payload, logId: log.id });
-  } else {
-    log = SharedStorage.pushLog(payload.type, payload.value, { note: payload.note });
-  }
+  const payload = { type: action.type, value: action.value, note: extras.note || null };
+  const log = pushLog({ ...payload, source: navigator.onLine === false ? 'offline' : null });
 
   const message = action.type === 'note' ? 'Added note' : `Added ${action.label}`;
   showToast(message, {
     undoLabel: 'Undo',
     duration: TOAST_DURATION,
     onUndo: () => {
-      SharedStorage.removeLog(log.id);
-      SharedStorage.removeQueue((item) => item.kind === 'log-sync' && item.logId === log.id);
+      removeLog(log.id);
     },
-  });
-}
-
-function flushQueue() {
-  if (navigator.onLine === false) return;
-  SharedStorage.flushQueue((items) => {
-    items.forEach((item) => {
-      if (item.kind !== 'log-sync') return;
-      SharedStorage.updateLog(item.logId, { source: 'manual' });
-    });
   });
 }
 
