@@ -70,7 +70,12 @@
     if (!container || typeof document === 'undefined') return;
     const file = (window.location?.pathname || '').split('/').pop().toLowerCase();
     const route = (file || 'index.html').replace('.html', '');
-    const normalizedRoute = route === 'diaryplus' ? 'diary' : route;
+    const normalizedRoute =
+      route === 'diaryplus'
+        ? 'diary'
+        : route === 'index'
+        ? 'summary'
+        : route || 'summary';
     container.querySelectorAll('a[data-route]').forEach((link) => {
       const isActive = (link.dataset.route || '').toLowerCase() === normalizedRoute;
       link.classList.toggle('is-active', isActive);

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Programs</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+    <link rel="stylesheet" href="./assets/css/modal.css" />
+  </head>
+  <body class="app-shell" data-page="programs">
+    <aside id="sidenav" class="sidebar" aria-label="Primary navigation"></aside>
+    <main class="app-main">
+      <div class="container flow">
+        <section class="card hero">
+          <h2>Programs</h2>
+          <p>Activate guided routines to stay accountable and compound healthy habits.</p>
+        </section>
+
+        <section class="card stack">
+          <h3>Mini programs</h3>
+          <p class="muted">Choose a focus area and follow lightweight daily tasks.</p>
+          <ul class="panel-list" aria-label="Available programs">
+            <li class="panel-list__item">
+              <div>
+                <span class="panel-list__title">Hydration 7-day</span>
+                <div class="panel-list__meta">
+                  <span>Progress: Day 3 of 7</span>
+                  <span>Focus: +250 ml above baseline</span>
+                </div>
+              </div>
+              <div class="panel-list__actions">
+                <button class="btn btn--primary" type="button">Continue</button>
+              </div>
+            </li>
+            <li class="panel-list__item">
+              <div>
+                <span class="panel-list__title">10k steps 5/7</span>
+                <div class="panel-list__meta">
+                  <span>Progress: Week 2 of 4</span>
+                  <span>Goal: 5 days ≥ 10,000 steps</span>
+                </div>
+              </div>
+              <div class="panel-list__actions">
+                <button class="btn" type="button">Start</button>
+              </div>
+            </li>
+            <li class="panel-list__item">
+              <div>
+                <span class="panel-list__title">Caffeine taper 14-day</span>
+                <div class="panel-list__meta">
+                  <span>Progress: Not started</span>
+                  <span>Outcome: Gradual reduction plan</span>
+                </div>
+              </div>
+              <div class="panel-list__actions">
+                <button class="btn" type="button">Start</button>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <section class="card stack">
+          <h3>Daily focus</h3>
+          <ul class="simple-list" aria-label="Today&#39;s suggested actions">
+            <li>Log wake-up hydration check-in</li>
+            <li>Schedule a 15-minute walk after lunch</li>
+            <li>Swap afternoon coffee for herbal tea</li>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <div id="pro-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pro-modal-title">
+      <div class="modal__box">
+        <h3 id="pro-modal-title">Pro feature</h3>
+        <p>Doctor/Programs are available on Pro. Start trial?</p>
+        <div class="modal__actions">
+          <button id="pro-start" class="btn btn--primary" type="button">Start trial</button>
+          <button id="pro-later" class="btn" type="button">Maybe later</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./assets/js/includes.js" defer></script>
+    <script type="module">
+      import { requireProOrRedirect } from './assets/js/gating.js';
+
+      requireProOrRedirect();
+    </script>
+  </body>
+</html>
