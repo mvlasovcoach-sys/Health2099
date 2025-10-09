@@ -1,0 +1,252 @@
+.morning {
+  display: grid;
+  gap: clamp(1.25rem, 2vw, 1.75rem);
+  padding: clamp(1.5rem, 2vw, 2rem);
+}
+
+.morning header {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.morning__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text, var(--color-heading));
+}
+
+.morning__subtitle {
+  margin: 0;
+  color: var(--muted, var(--color-muted));
+  font-size: 0.95rem;
+}
+
+.morning-card {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.morning-card[data-state='compact'] .morning-form {
+  display: none;
+}
+
+.morning-card[data-state='form'] .morning-compact {
+  display: none;
+}
+
+.morning-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.morning-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.morning-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.morning-field label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--text, var(--color-heading));
+}
+
+.morning-field small {
+  color: var(--muted, var(--color-muted));
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.morning-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.morning-input-group input[type='number'] {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm, 12px);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.03);
+  color: inherit;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.morning-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.morning-stepper button {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(255, 255, 255, 0.6);
+  color: inherit;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.morning-stepper button:focus-visible {
+  outline: 3px solid var(--color-focus, rgba(37, 99, 235, 0.6));
+  outline-offset: 2px;
+}
+
+.morning-slider {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.morning-slider input[type='range'] {
+  width: 100%;
+}
+
+.morning-slider output {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text, var(--color-heading));
+}
+
+.morning-tags {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.morning-tags label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 500;
+  color: var(--text, var(--color-heading));
+}
+
+.morning-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm, 12px);
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  font-weight: 600;
+}
+
+.morning-preview span {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.morning-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.morning-actions button[type='submit'] {
+  min-width: 160px;
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--primary, var(--color-primary));
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.morning-actions button[type='submit']:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 2px;
+}
+
+.morning-compact {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--radius-sm, 12px);
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.morning-compact__meta {
+  margin: 0;
+  color: var(--muted, var(--color-muted));
+}
+
+.morning-compact__summary {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text, var(--color-heading));
+}
+
+.morning-compact__link {
+  justify-self: start;
+  color: var(--primary, var(--color-primary));
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.morning-compact__link:focus-visible,
+.morning-compact__link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .morning-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .morning-tags {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .morning {
+    padding: 1.25rem;
+    gap: 1.25rem;
+  }
+
+  .morning-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .morning-field label {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .morning-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .morning-stepper {
+    justify-content: flex-end;
+  }
+
+  .morning-tags {
+    grid-template-columns: 1fr;
+  }
+
+  .morning-preview {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

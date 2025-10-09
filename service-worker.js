@@ -2,6 +2,7 @@ const CACHE_NAME = 'health2099-cache-v6-restore-mapfix-v8-v9-v10-map';
 const APP_SHELL = [
   './',
   './pocket_health_link.html',
+  './Diary.html',
   './DiaryPlus.html',
   './Summary.html',
   './Map.html',
