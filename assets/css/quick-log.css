@@ -1,3 +1,4 @@
+/* компактные чипы */
 :root {
   --pillW: 96px;
   --pillH: 36px;
@@ -66,8 +67,20 @@
   margin-right: 0;
 }
 
+/* Контент карточки Quick actions не шире комфортного контейнера */
+.quick-log .card__body {
+  max-width: 420px;
+  margin-left: 0;
+}
+
+@media (max-width: 480px) {
+  .quick-log .card__body {
+    max-width: 100%;
+  }
+}
+
 .quick-log .ql-section {
-  margin: 12px 0 16px;
+  margin: 10px 0 14px;
 }
 
 .quick-log .ql-head {
@@ -93,6 +106,7 @@
   grid-template-columns: repeat(3, var(--pillW));
   gap: 8px;
   justify-content: start;
+  justify-items: start;
 }
 
 @media (max-width: 480px) {
