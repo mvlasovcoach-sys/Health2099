@@ -1,25 +1,12 @@
-import { getTargets, setTargets, listLogs, pushLog, removeLog, onChange } from './sharedStorage.js';
+import { listLogs, pushLog, removeLog, onChange } from './sharedStorage.js';
 import { getMedsToday, setMedsToday, updateMedToday, startOfDayISO } from './data-layer.js';
 
 export function initSidebar() {
-  const waterInput = document.getElementById('target-water');
-  const stepsInput = document.getElementById('target-steps');
-  const sleepInput = document.getElementById('target-sleep');
-  const caffeineInput = document.getElementById('target-caffeine');
   const medsList = document.getElementById('meds-list');
   const addMedButton = document.getElementById('add-med');
-  if (!waterInput || !stepsInput || !sleepInput || !caffeineInput || !medsList) return;
-
-  const inputs = [waterInput, stepsInput, sleepInput, caffeineInput];
-  const debouncedSave = debounce(saveTargets, 400);
+  if (!medsList) return;
 
   function render() {
-    const targets = getTargets();
-    waterInput.value = targets.water_ml;
-    stepsInput.value = targets.steps;
-    sleepInput.value = targets.sleep_min;
-    caffeineInput.value = targets.caffeine_mg;
-
     medsList.innerHTML = '';
     const meds = getMedsToday();
     const takenLogs = listLogs({ type: 'med', since: startOfDayISO(new Date()) });
@@ -52,10 +39,6 @@ export function initSidebar() {
     });
   }
 
-  inputs.forEach((input) => {
-    input.addEventListener('input', () => debouncedSave(inputs));
-  });
-
   if (addMedButton) {
     addMedButton.addEventListener('click', () => {
       const name = window.prompt('Medication name');
@@ -70,11 +53,6 @@ export function initSidebar() {
 
   render();
   onChange(render);
-}
-
-function saveTargets(inputs) {
-  const [water_ml, steps, sleep_min, caffeine_mg] = inputs.map((input) => Number(input.value || 0));
-  setTargets({ water_ml, steps, sleep_min, caffeine_mg });
 }
 
 function toggleMed(med, checked) {
@@ -109,14 +87,6 @@ function editMedName(med) {
 function removeMed(id) {
   const meds = getMedsToday().filter((med) => med.id !== id);
   setMedsToday(meds);
-}
-
-function debounce(fn, delay) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  };
 }
 
 function createMedId() {

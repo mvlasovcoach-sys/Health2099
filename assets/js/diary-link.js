@@ -15,7 +15,7 @@ function withBase(path) {
 }
 
 function setupSummaryLinks() {
-  const links = document.querySelectorAll('.diary-link[href]');
+  const links = document.querySelectorAll('.diary-link[href], .quick-log__link[href]');
   links.forEach((link) => {
     const href = link.getAttribute('href');
     if (!href) return;
