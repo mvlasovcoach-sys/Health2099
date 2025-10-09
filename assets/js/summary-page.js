@@ -3,7 +3,7 @@ import './summary-header.js';
 import './sidebar.js';
 import './hero-kpi.js';
 import './morning.js';
-import './quick-actions.js';
+import './quick-log.js';
 import './timeline.js';
 import './insights.js';
 import './streaks.js';

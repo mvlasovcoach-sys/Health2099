@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="./shared/styles.css" />
     <link rel="stylesheet" href="./assets/css/summary.css?v=20240716" />
     <link rel="stylesheet" href="./assets/css/morning.css?v=20240716" />
-    <link rel="stylesheet" href="./assets/css/quick-actions.css?v=20240716" />
+    <link rel="stylesheet" href="./assets/css/quick-log.css?v=20240716" />
+    <link rel="stylesheet" href="./assets/css/goals.css?v=20240716" />
     <link rel="stylesheet" href="./assets/css/animations.css?v=20240716" />
     <link rel="stylesheet" href="./assets/css/timeline.css?v=20240716" />
     <link rel="stylesheet" href="./assets/css/ui.css?v=20240716" />
@@ -153,13 +154,6 @@
               <section aria-labelledby="kpi-heading" class="kpi-grid" id="kpi-grid" role="region" data-kpi-rings>
                 <h2 id="kpi-heading" class="visually-hidden">Key wellness metrics</h2>
               </section>
-              <section class="quick-actions" aria-labelledby="actions-heading" role="region">
-                <header>
-                  <h2 id="actions-heading">Quick actions</h2>
-                  <p>Log habits in a tap. Offline entries queue automatically.</p>
-                </header>
-                <div class="quick-actions__sections" id="quick-actions" role="group" aria-label="Quick log actions"></div>
-              </section>
               <section class="timeline" aria-labelledby="timeline-heading" role="region">
                 <header class="timeline__header">
                   <div class="timeline__title">
@@ -188,40 +182,42 @@
           </div>
           <aside class="summary-sidebar" aria-labelledby="sidebar-heading">
             <h2 id="sidebar-heading" class="visually-hidden">Sidebar</h2>
-            <section class="sidebar-section diary-links" aria-labelledby="diary-links-heading">
-              <header>
-                <h3 id="diary-links-heading">Diary shortcuts</h3>
+            <section
+              class="sidebar-section sidebar-section--quick-log"
+              aria-labelledby="quick-log-heading"
+            >
+              <header class="quick-log__header">
+                <div class="quick-log__title">
+                  <h3 id="quick-log-heading">Quick actions</h3>
+                  <p>Log habits in a tap. Offline entries queue automatically.</p>
+                </div>
+                <button
+                  type="button"
+                  class="quick-log__edit card-press"
+                  id="edit-goals"
+                  aria-haspopup="dialog"
+                >
+                  Edit goals
+                </button>
               </header>
-              <div class="diary-links__grid" id="diary-links" role="group" aria-label="Diary quick links">
-                <a class="diary-link card-press card-hover" data-section="meds" href="Diary.html?section=meds&amp;date=today">
-                  <span class="diary-link__title">Meds today</span>
-                  <span class="diary-link__hint">Review and adjust doses</span>
+              <div class="quick-log" id="quick-log" role="group" aria-label="Quick actions"></div>
+              <div class="quick-log__links" id="quick-log-links" role="group" aria-label="Diary shortcuts">
+                <a
+                  class="quick-log__link card-press card-hover"
+                  data-section="meds"
+                  href="Diary.html?section=meds&amp;date=today"
+                >
+                  <span class="quick-log__link-title">Meds today</span>
+                  <span class="quick-log__link-hint">Review and adjust doses</span>
                 </a>
-                <a class="diary-link card-press card-hover" data-section="food" href="Diary.html?section=food&amp;date=today&amp;action=add">
-                  <span class="diary-link__title">Meals</span>
-                  <span class="diary-link__hint">Log a meal or snack</span>
+                <a
+                  class="quick-log__link card-press card-hover"
+                  data-section="food"
+                  href="Diary.html?section=food&amp;date=today&amp;action=add"
+                >
+                  <span class="quick-log__link-title">Meals</span>
+                  <span class="quick-log__link-hint">Log a meal or snack</span>
                 </a>
-              </div>
-            </section>
-            <section class="sidebar-section" aria-labelledby="targets-heading">
-              <header>
-                <h3 id="targets-heading">Targets</h3>
-              </header>
-              <div class="target-item">
-                <label for="target-water">Water goal (ml)</label>
-                <input id="target-water" type="number" inputmode="numeric" min="0" />
-              </div>
-              <div class="target-item">
-                <label for="target-steps">Steps goal</label>
-                <input id="target-steps" type="number" inputmode="numeric" min="0" />
-              </div>
-              <div class="target-item">
-                <label for="target-sleep">Sleep goal (minutes)</label>
-                <input id="target-sleep" type="number" inputmode="numeric" min="0" />
-              </div>
-              <div class="target-item">
-                <label for="target-caffeine">Caffeine ceiling (mg)</label>
-                <input id="target-caffeine" type="number" inputmode="numeric" min="0" />
               </div>
             </section>
             <section class="sidebar-section" aria-labelledby="meds-heading">

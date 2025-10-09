@@ -326,10 +326,8 @@
           }
 
           const addButton = form.querySelector('button[type="submit"]');
-          const valueInput = form.elements.value;
-          const target = options.action === 'add' ? addButton : valueInput;
-          if (target && typeof target.focus === 'function') {
-            target.focus();
+          if (addButton && typeof addButton.focus === 'function') {
+            requestAnimationFrame(() => addButton.focus());
           }
           form.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
