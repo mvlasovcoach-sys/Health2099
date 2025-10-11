@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="preload" href="./assets/css/theme.css" as="style" />
+    <link rel="stylesheet" href="./assets/css/theme.css" />
+    <link rel="stylesheet" href="./shared/styles.css" />
+    <link rel="stylesheet" href="./assets/css/summary.css?v=20240716" />
+    <link rel="stylesheet" href="./assets/css/morning.css?v=20240716" />
+    <link rel="stylesheet" href="./assets/css/quick-log.css?v=20240716" />
+    <link rel="stylesheet" href="./assets/css/goals.css?v=20240716" />
+    <link rel="stylesheet" href="./assets/css/animations.css?v=20240716" />
+    <link rel="stylesheet" href="./assets/css/timeline.css?v=20240716" />
+    <link rel="stylesheet" href="./assets/css/ui.css?v=20240716" />
+    <link rel="stylesheet" href="./assets/css/badges.css?v=20240716" />
+  </head>
+  <body class="app has-sidenav app-shell" data-page="summary">
+    <div class="app__grid">
+      <aside id="sidenav" class="sidebar app__sidenav" aria-label="Primary navigation"></aside>
+      <main class="app__main app-main">
+        <div class="summary-viewport">
+          <section class="hero hero--compact">
+            <div class="hero__overline">SUMMARY</div>
+            <h1 class="hero__title">Wellness snapshot</h1>
+            <p class="hero__subtitle">
+              Live overview of hydration, sleep, steps, caffeine and meds. Everything updates live across tabs.
+            </p>
+          </section>
+        <div class="summary-layout">
+          <div class="summary-content">
+            <header id="summary-header" class="summary-header" role="banner"></header>
+            <section class="summary-main" id="main">
+              <section class="morning" id="morning-checkin" aria-labelledby="morning-heading">
+                <header>
+                  <h2 id="morning-heading" class="morning__title">Morning check-in</h2>
+                  <p class="morning__subtitle">Capture how you woke up to fine-tune the rest of your day.</p>
+                </header>
+                <div class="morning-card" data-state="form">
+                  <form class="morning-form" id="morning-form" autocomplete="off">
+                    <div class="morning-grid">
+                      <div class="morning-field">
+                        <label for="morning-sleep">
+                          <span>Sleep duration (hours)</span>
+                          <small>Step 0.25</small>
+                        </label>
+                        <div class="morning-input-group">
+                          <div class="morning-stepper" data-target="sleep">
+                            <button type="button" data-step="-0.25" aria-label="Decrease sleep duration">−</button>
+                            <button type="button" data-step="0.25" aria-label="Increase sleep duration">+</button>
+                          </div>
+                          <input
+                            id="morning-sleep"
+                            name="sleep"
+                            type="number"
+                            step="0.25"
+                            min="0"
+                            max="16"
+                            value="7"
+                            inputmode="decimal"
+                            aria-describedby="morning-sleep-help"
+                            required
+                          />
+                        </div>
+                        <small id="morning-sleep-help">Adjust in quarter-hour steps.</small>
+                      </div>
+                      <div class="morning-field morning-slider">
+                        <label for="morning-quality">
+                          <span>Sleep quality</span>
+                          <small>0–10</small>
+                        </label>
+                        <input id="morning-quality" name="quality" type="range" min="0" max="10" step="1" value="7" />
+                        <output id="morning-quality-output" for="morning-quality">7</output>
+                      </div>
+                      <div class="morning-field">
+                        <label for="morning-rhr">
+                          <span>Resting HR (bpm)</span>
+                          <small>Step 1</small>
+                        </label>
+                        <div class="morning-input-group">
+                          <div class="morning-stepper" data-target="rhr">
+                            <button type="button" data-step="-1" aria-label="Decrease resting heart rate">−</button>
+                            <button type="button" data-step="1" aria-label="Increase resting heart rate">+</button>
+                          </div>
+                          <input
+                            id="morning-rhr"
+                            name="rhr"
+                            type="number"
+                            min="30"
+                            max="140"
+                            step="1"
+                            value="60"
+                            inputmode="numeric"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="morning-field">
+                        <label for="morning-hrv">
+                          <span>HRV (ms)</span>
+                          <small>Step 1</small>
+                        </label>
+                        <div class="morning-input-group">
+                          <div class="morning-stepper" data-target="hrv">
+                            <button type="button" data-step="-1" aria-label="Decrease HRV">−</button>
+                            <button type="button" data-step="1" aria-label="Increase HRV">+</button>
+                          </div>
+                          <input
+                            id="morning-hrv"
+                            name="hrv"
+                            type="number"
+                            min="10"
+                            max="300"
+                            step="1"
+                            value="65"
+                            inputmode="numeric"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <fieldset class="morning-tags">
+                      <legend class="visually-hidden">Morning tags</legend>
+                      <label>
+                        <input type="checkbox" name="alcohol" value="1" />
+                        Alcohol in the evening
+                      </label>
+                      <label>
+                        <input type="checkbox" name="late_meal" value="1" />
+                        Late meal
+                      </label>
+                      <label>
+                        <input type="checkbox" name="malaise" value="1" />
+                        Symptoms of malaise
+                      </label>
+                    </fieldset>
+                    <div class="morning-preview" aria-live="polite">
+                      <span>Preview → Energy: <strong data-preview="energy">72</strong></span>
+                      <span>SRV: <strong data-preview="srv">74</strong></span>
+                    </div>
+                    <div class="morning-actions">
+                      <button type="submit">Save morning</button>
+                    </div>
+                  </form>
+                  <div class="morning-compact" aria-live="polite">
+                    <p class="morning-compact__meta" data-compact="time"></p>
+                    <p class="morning-compact__summary" data-compact="summary"></p>
+                    <a class="morning-compact__link" data-compact="link" href="Diary.html?section=morning&date=today">Edit in Diary →</a>
+                  </div>
+                </div>
+              </section>
+              <section aria-labelledby="kpi-heading" class="kpi-grid" id="kpi-grid" role="region" data-kpi-rings>
+                <h2 id="kpi-heading" class="visually-hidden">Key wellness metrics</h2>
+              </section>
+              <section class="timeline" aria-labelledby="timeline-heading" role="region">
+                <header class="timeline__header">
+                  <div class="timeline__title">
+                    <h2 id="timeline-heading">Today</h2>
+                    <p id="timeline-count" class="timeline-meta"></p>
+                  </div>
+                  <div class="timeline__controls">
+                    <div class="timeline-filters" id="timeline-filters" role="group" aria-label="Timeline range"></div>
+                    <button type="button" class="card-press" id="seed-demo">Seed demo data</button>
+                  </div>
+                </header>
+                <div class="timeline-list" id="timeline-list" aria-live="polite"></div>
+              </section>
+              <section class="insights" aria-labelledby="insights-heading" id="insights" role="region">
+                <h2 id="insights-heading">Insights &amp; nudges</h2>
+              </section>
+              <section class="streaks" aria-labelledby="streaks-heading" role="region">
+                <h2 id="streaks-heading">Streaks</h2>
+                <div class="streak-list" id="streak-list"></div>
+              </section>
+              <section class="badges" aria-labelledby="badges-heading" role="region">
+                <h2 id="badges-heading" class="visually-hidden">Badges</h2>
+                <div id="badge-collection"></div>
+              </section>
+            </section>
+          </div>
+          <aside class="summary-sidebar" aria-labelledby="sidebar-heading">
+            <h2 id="sidebar-heading" class="visually-hidden">Sidebar</h2>
+            <section
+              class="sidebar-section sidebar-section--quick-log"
+              aria-labelledby="quick-log-heading"
+            >
+              <header class="quick-log__header">
+                <div class="quick-log__title">
+                  <h3 id="quick-log-heading">Quick actions</h3>
+                  <p>Log habits in a tap. Offline entries queue automatically.</p>
+                </div>
+              </header>
+              <div class="quick-log" id="quick-log" role="group" aria-label="Quick actions"></div>
+            </section>
+          </aside>
+        </div>
+        <footer class="summary-footer" role="contentinfo">
+          Synced via shared storage · Broadcast ready
+        </footer>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="./assets/js/summary-page.js?v=20240716"></script>
+  </body>
+</html>
