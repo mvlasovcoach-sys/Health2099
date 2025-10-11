@@ -16,18 +16,19 @@
     <link rel="stylesheet" href="./assets/css/timeline.css?v=20240716" />
     <link rel="stylesheet" href="./assets/css/ui.css?v=20240716" />
     <link rel="stylesheet" href="./assets/css/badges.css?v=20240716" />
-    // определяем окружение по пути
-    const isDev = location.pathname.includes('/Health2099/dev/');
-    const CONFIG_URL = isDev
-      ? '/Health2099/config/dev.json'
-      : '/Health2099/config/prod.json';
+    <script>
+  const isDev = location.pathname.includes('/Health2099/dev/');
+  const CONFIG_URL = isDev
+    ? '/Health2099/config/dev.json'
+    : '/Health2099/config/prod.json';
 
-    window.CFG = null;
-    fetch(CONFIG_URL).then(r => r.json()).then(c => {
-      window.CFG = c;
-      console.log('ENV:', CFG.ENV); // для проверки
-      if (typeof initApp === 'function') initApp();
-    });
+  window.CFG = null;
+  fetch(CONFIG_URL).then(r => r.json()).then(c => {
+    window.CFG = c;
+    console.log('ENV:', CFG.ENV);
+    if (typeof initApp === 'function') initApp();
+  });
+    </script>
   </head>
   <body class="app has-sidenav app-shell" data-page="summary">
     <div class="app__grid">
