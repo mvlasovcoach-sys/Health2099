@@ -1,0 +1,3 @@
+{ "ENV":"dev","FEATURES":{"doctorCabinet":true,"programs":true,"pwa":false},
+  "API_BASE_URL":"https://dev.api.health2099.example",
+  "AUTH":{"provider":"stub","demoUsers":["demo1","demo2","demo3"]} }
